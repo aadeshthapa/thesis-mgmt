@@ -4,7 +4,7 @@ import {
   authorizeRoles,
   AuthRequest,
 } from "../middleware/auth";
-import { courseService } from "../../services/courseService";
+import { courseService } from "../../services/backend/courseService";
 
 const router = express.Router();
 
@@ -54,16 +54,32 @@ router.post(
   }
 );
 
-// Enroll a student in a course (supervisor and admin only)
-router.post(
-  "/enroll",
+// Get course students
+router.get(
+  "/:courseId/students",
   authenticateToken,
-  authorizeRoles("SUPERVISOR", "ADMIN"),
   async (req: AuthRequest, res) => {
     try {
-      const { studentId, courseId } = req.body;
-      const enrollment = await courseService.enrollStudent(studentId, courseId);
-      res.status(201).json(enrollment);
+      const { courseId } = req.params;
+      const students = await courseService.getCourseStudents(courseId);
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching course students:", error);
+      res.status(500).json({ message: "Failed to fetch course students" });
+    }
+  }
+);
+
+// Enroll a student in a course
+router.post(
+  "/:courseId/students",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const { studentId } = req.body;
+      await courseService.enrollStudent(courseId, studentId);
+      res.status(201).json({ message: "Student enrolled successfully" });
     } catch (error) {
       console.error("Error enrolling student:", error);
       res.status(500).json({ message: "Failed to enroll student" });
@@ -71,19 +87,35 @@ router.post(
   }
 );
 
-// Unenroll a student from a course (supervisor and admin only)
+// Remove a student from a course
 router.delete(
-  "/enroll",
+  "/:courseId/students/:studentId",
   authenticateToken,
-  authorizeRoles("SUPERVISOR", "ADMIN"),
   async (req: AuthRequest, res) => {
     try {
-      const { studentId, courseId } = req.body;
-      await courseService.unenrollStudent(studentId, courseId);
-      res.json({ message: "Student unenrolled successfully" });
+      const { courseId, studentId } = req.params;
+      await courseService.unenrollStudent(courseId, studentId);
+      res.json({ message: "Student removed successfully" });
     } catch (error) {
-      console.error("Error unenrolling student:", error);
-      res.status(500).json({ message: "Failed to unenroll student" });
+      console.error("Error removing student:", error);
+      res.status(500).json({ message: "Failed to remove student" });
+    }
+  }
+);
+
+// Delete a course (admin only)
+router.delete(
+  "/:courseId",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      await courseService.deleteCourse(courseId);
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
     }
   }
 );

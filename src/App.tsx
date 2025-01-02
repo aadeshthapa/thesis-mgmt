@@ -13,6 +13,8 @@ import SupervisorDashboard from "./pages/supervisor/Dashboard.js";
 import CoursesList from "./pages/supervisor/CoursesList.js";
 import CourseStudents from "./pages/supervisor/CourseStudents.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
+import AdminCoursesList from "./pages/admin/CoursesList.js";
+import AdminCourseStudents from "./pages/admin/CourseStudents.js";
 import StudentLayout from "./components/layout/StudentLayout.js";
 import Register from "./pages/Register.js";
 import ForgotPassword from "./pages/ForgotPassword.js";
@@ -53,22 +55,23 @@ const App: React.FC = () => {
               <Route path="submissions" element={<Submissions />} />
             </Route>
 
+            {/* Supervisor Routes */}
             <Route
               path="/supervisor/dashboard"
               element={<SupervisorDashboard />}
             />
-            <Route
-              path="/supervisor/review-thesis"
-              element={<SupervisorDashboard />}
-            />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/manage-users" element={<AdminDashboard />} />
-
-            {/* Supervisor Routes */}
             <Route path="/supervisor/courses" element={<CoursesList />} />
             <Route
               path="/supervisor/courses/:courseId/students"
               element={<CourseStudents />}
+            />
+
+            {/* Admin Routes */}
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/courses" element={<AdminCoursesList />} />
+            <Route
+              path="/admin/courses/:courseId/students"
+              element={<AdminCourseStudents />}
             />
           </Routes>
         </div>
