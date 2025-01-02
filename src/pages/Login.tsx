@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
+import type { UserRole } from "@prisma/client";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -70,10 +71,10 @@ const Login: React.FC = () => {
       const userRole = user?.role;
 
       // Role-based redirection
-      const redirectPaths = {
-        student: "/student/dashboard",
-        supervisor: "/supervisor/dashboard",
-        admin: "/admin/dashboard",
+      const redirectPaths: Record<UserRole, string> = {
+        STUDENT: "/student/dashboard",
+        SUPERVISOR: "/supervisor/dashboard",
+        ADMIN: "/admin/dashboard",
       };
 
       // Only redirect if we have a valid role

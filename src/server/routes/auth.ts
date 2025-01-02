@@ -1,75 +1,115 @@
-import express, { Request, Response, Router } from "express";
-import bcrypt from "bcrypt";
-import pkg from "pg";
-const { Pool } = pkg;
-import { validateEmail, validatePassword } from "../utils/validation.js";
+import express from "express";
+import { authService } from "../../services/authService";
+import { userService } from "../../services/userService";
+import jwt from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
 
-interface TypedRequestBody<T> extends Express.Request {
-  body: T;
-}
+const router = express.Router();
 
-interface RegisterBody {
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  role: string;
-}
-
-const router: Router = express.Router();
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+// Rate limiting for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per window
+  message: { error: "Too many login attempts, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-router.post(
-  "/register",
-  async (req: TypedRequestBody<RegisterBody>, res: Response) => {
-    const { name, email, password, phone, role } = req.body;
+router.post("/register", async (req, res) => {
+  try {
+    const registrationData = req.body;
 
-    try {
-      // Validate input
-      if (!validateEmail(email)) {
-        return res.status(400).json({ message: "Invalid email format" });
-      }
-
-      if (!validatePassword(password)) {
-        return res.status(400).json({
-          message:
-            "Password must be at least 8 characters long and contain uppercase, lowercase, and numbers",
-        });
-      }
-
-      // Check if user already exists
-      const userExists = await pool.query(
-        "SELECT * FROM users WHERE email = $1",
-        [email]
-      );
-
-      if (userExists.rows.length > 0) {
-        return res.status(400).json({ message: "Email already registered" });
-      }
-
-      // Hash password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Insert new user
-      const result = await pool.query(
-        `INSERT INTO users (name, email, password_hash, phone, role) 
-     VALUES ($1, $2, $3, $4, $5) 
-     RETURNING id, name, email, role`,
-        [name, email, hashedPassword, phone, role]
-      );
-
-      return res.status(201).json({
-        message: "Registration successful",
-        user: result.rows[0],
-      });
-    } catch (error: unknown) {
-      console.error("Registration error:", error);
-      return res.status(500).json({ message: "Internal server error" });
+    // Add default permissions for admin
+    if (registrationData.role === "ADMIN") {
+      registrationData.permissions = ["VIEW_REPORTS"];
     }
+
+    const user = await authService.register(registrationData);
+    res.status(201).json({ message: "Registration successful", user });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(400).json({
+      message: error instanceof Error ? error.message : "Registration failed",
+    });
   }
-);
+});
+
+router.post("/login", loginLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log("Login attempt for email:", email);
+
+    // Check if user exists first
+    const userExists = await userService.getUserByEmail(email);
+    if (!userExists) {
+      console.log("User not found with email:", email);
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    console.log("User found, verifying password...");
+    const user = await authService.login(email, password);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "24h" }
+    );
+
+    console.log("Login successful for user:", email);
+    res.json({
+      message: "Login successful",
+      user,
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(401).json({
+      message: error instanceof Error ? error.message : "Invalid credentials",
+    });
+  }
+});
+
+router.post("/logout", (req, res) => {
+  // Since we're using JWT, we just send a success response
+  // The client will remove the token
+  res.json({ message: "Logout successful" });
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Validate the new password
+    if (
+      !newPassword ||
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[a-z]/.test(newPassword) ||
+      !/\d/.test(newPassword)
+    ) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters long and contain uppercase, lowercase, and numbers",
+      });
+    }
+
+    const success = await userService.resetPassword(email, newPassword);
+
+    if (success) {
+      res.json({ message: "Password updated successfully" });
+    } else {
+      res.status(400).json({ message: "Failed to update password" });
+    }
+  } catch (error) {
+    console.error("Password reset error:", error);
+    res.status(500).json({
+      message:
+        error instanceof Error ? error.message : "Failed to reset password",
+    });
+  }
+});
 
 export default router;

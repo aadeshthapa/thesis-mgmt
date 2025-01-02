@@ -17,7 +17,7 @@ const StudentDashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<ProfileFormData>({
-    name: user?.name || "",
+    name: `${user?.firstName} ${user?.lastName}` || "",
     email: user?.email || "",
     mobile: "",
     location: "",
@@ -106,8 +106,8 @@ const StudentDashboard: React.FC = () => {
             </div>
           </div>
           <div>
-            <h2 className="text-xl font-semibold"> {user?.name}</h2>
-            <p className="text-gray-500"> {user?.email}</p>
+            <h2 className="text-xl font-semibold">{`${user?.firstName} ${user?.lastName}`}</h2>
+            <p className="text-gray-500">{user?.email}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-6">

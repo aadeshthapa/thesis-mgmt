@@ -93,10 +93,10 @@ const Sidebar: React.FC = () => {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
-              {user?.name.charAt(0)}
+              {user?.firstName?.charAt(0)}
             </div>
             <div>
-              <div className="font-medium text-gray-900">{user?.name}</div>
+              <div className="font-medium text-gray-900">{`${user?.firstName} ${user?.lastName}`}</div>
               <div className="text-sm text-gray-500">{user?.email}</div>
             </div>
           </div>
