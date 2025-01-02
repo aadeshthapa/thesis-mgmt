@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { CourseList } from "../../components/student/CourseList";
+import { CourseList } from "../../components/features/student/CourseList";
 
 export const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
