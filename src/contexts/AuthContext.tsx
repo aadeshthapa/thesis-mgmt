@@ -22,7 +22,10 @@ type AuthUser = Omit<User, "passwordHash"> & {
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
+  login: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<{ user: AuthUser; token: string }>;
   logout: () => void;
   isAuthenticated: boolean;
   getAuthHeader: () => { Authorization: string } | {};
@@ -73,7 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(errorMessage);
       }
 
-      const { user: userData, token: authToken } = await response.json();
+      const data = await response.json();
+      const { user: userData, token: authToken } = data;
 
       // Store user and token in localStorage and state
       localStorage.setItem("user", JSON.stringify(userData));
@@ -81,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(userData);
       setToken(authToken);
       setIsAuthenticated(true);
+
+      return data;
     } catch (error) {
       console.error("Login error:", error);
       throw error;

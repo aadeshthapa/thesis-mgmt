@@ -62,13 +62,10 @@ const Login: React.FC = () => {
     setErrors((prev) => ({ ...prev, general: "" }));
 
     try {
-      await login({
+      const { user: userData } = await login({
         email: formData.email,
         password: formData.password,
       });
-
-      // Get fresh user context after login
-      const userRole = user?.role;
 
       // Role-based redirection
       const redirectPaths: Record<UserRole, string> = {
@@ -76,6 +73,9 @@ const Login: React.FC = () => {
         SUPERVISOR: "/supervisor/dashboard",
         ADMIN: "/admin/dashboard",
       };
+
+      // Get the role from the login response
+      const userRole = userData?.role as UserRole;
 
       // Only redirect if we have a valid role
       if (userRole && redirectPaths[userRole]) {
