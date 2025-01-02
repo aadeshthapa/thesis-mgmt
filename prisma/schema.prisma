@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  SUPERVISOR
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  studentProfile     StudentProfile?
+  supervisorProfile  SupervisorProfile?
+  adminProfile      AdminProfile?
+  thesesSubmitted    Thesis[]        @relation("StudentThesis")
+  thesesSupervised   Thesis[]        @relation("SupervisorThesis")
+  notifications      Notification[]
+}
+
+model StudentProfile {
+  id              String    @id @default(uuid())
+  studentId       String    @unique
+  department      String
+  program         String
+  enrollmentYear  Int
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String    @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SupervisorProfile {
+  id              String    @id @default(uuid())
+  department      String
+  specialization  String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String    @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+enum ThesisStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_REVISION
+  APPROVED
+  REJECTED
+}
+
+model Thesis {
+  id            String        @id @default(uuid())
+  title         String
+  abstract      String
+  status        ThesisStatus  @default(DRAFT)
+  submissionDate DateTime     @default(now())
+  lastUpdated   DateTime      @updatedAt
+  
+  // Relations
+  student       User          @relation("StudentThesis", fields: [studentId], references: [id])
+  studentId     String
+  supervisor    User          @relation("SupervisorThesis", fields: [supervisorId], references: [id])
+  supervisorId  String
+  revisions     ThesisRevision[]
+  feedback      ThesisFeedback[]
+
+  @@index([studentId])
+  @@index([supervisorId])
+}
+
+model ThesisRevision {
+  id          String    @id @default(uuid())
+  version     Int
+  document    String    // URL or path to the document
+  comments    String?
+  thesis      Thesis    @relation(fields: [thesisId], references: [id], onDelete: Cascade)
+  thesisId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([thesisId])
+}
+
+model ThesisFeedback {
+  id          String    @id @default(uuid())
+  comments    String
+  thesis      Thesis    @relation(fields: [thesisId], references: [id], onDelete: Cascade)
+  thesisId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([thesisId])
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  title       String
+  message     String
+  isRead      Boolean   @default(false)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AdminProfile {
+  id              String    @id @default(uuid())
+  department      String
+  position        String
+  permissions     String[]  // Array of permission strings
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String    @unique
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
