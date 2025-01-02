@@ -9,33 +9,24 @@ interface Course {
   category: string;
 }
 
-interface CoursesByCategory {
-  [category: string]: Course[];
-}
-
 export const courseService = {
-  async getEnrolledCourses(userId: string) {
+  async getEnrolledCourses(userId: string): Promise<Course[]> {
     try {
-      const enrollments = await prisma.$queryRaw`
-        SELECT c.* 
-        FROM "Course" c
-        JOIN "Enrollment" e ON e."courseId" = c.id
-        WHERE e."userId" = ${userId}
-      `;
-
-      // Group courses by category
-      const coursesByCategory = (enrollments as Course[]).reduce(
-        (acc: CoursesByCategory, course: Course) => {
-          if (!acc[course.category]) {
-            acc[course.category] = [];
-          }
-          acc[course.category].push(course);
-          return acc;
+      const enrollments = await prisma.enrollment.findMany({
+        where: {
+          userId: userId,
         },
-        {}
-      );
+        include: {
+          course: true,
+        },
+      });
 
-      return coursesByCategory;
+      return enrollments.map((enrollment) => ({
+        id: enrollment.course.id,
+        code: enrollment.course.code,
+        name: enrollment.course.name,
+        category: enrollment.course.category,
+      }));
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
       throw error;
@@ -47,7 +38,8 @@ export const courseService = {
   },
 
   async getStudentCourses(userId: string) {
-    return prisma.course.findMany({
+    console.log("Getting courses for student:", userId);
+    const courses = await prisma.course.findMany({
       where: {
         enrollments: {
           some: {
@@ -56,6 +48,8 @@ export const courseService = {
         },
       },
     });
+    console.log("Found courses in service:", courses);
+    return courses;
   },
 
   async createCourse(data: { code: string; name: string; category: string }) {
