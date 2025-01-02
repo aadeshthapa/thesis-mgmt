@@ -1,5 +1,5 @@
 import React from "react";
-import LogoutButton from "../../components/auth/Logout";
+import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
 
 const AdminDashboard: React.FC = () => {
