@@ -1,7 +1,6 @@
 import express from "express";
 import { authService } from "../../services/authService";
 import { userService } from "../../services/userService";
-import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 
 const router = express.Router();
@@ -37,18 +36,16 @@ router.post("/register", async (req, res) => {
 router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("Login attempt for email:", email);
-
-    const user = await authService.login(email, password);
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, role: user.role },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "24h" }
+    console.log(
+      "Login attempt for email:",
+      email,
+      "with password length:",
+      password.length
     );
 
-    console.log("Login successful for user:", email);
+    const { user, token } = await authService.login(email, password);
+    console.log("Login successful for user:", email, "with role:", user.role);
+
     res.json({
       message: "Login successful",
       user,

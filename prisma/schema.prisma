@@ -36,6 +36,7 @@ model User {
   thesesSubmitted    Thesis[]        @relation("StudentThesis")
   thesesSupervised   Thesis[]        @relation("SupervisorThesis")
   notifications      Notification[]
+  enrollments        Enrollment[]
 }
 
 model StudentProfile {
@@ -134,4 +135,26 @@ model AdminProfile {
   userId          String    @unique
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  category    String   // e.g., "School of Information Technology_T324"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
 }

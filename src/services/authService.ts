@@ -92,13 +92,13 @@ class AuthService {
     // Check if user exists
     const user = await userService.getUserByEmail(email);
     if (!user) {
-      throw new Error("User not found with email: " + email);
+      throw new Error("Invalid email or password");
     }
 
     // Verify password
     const isValid = await userService.verifyPassword(email, password);
     if (!isValid) {
-      throw new Error("Invalid password for user: " + email);
+      throw new Error("Invalid email or password");
     }
 
     // Get user with profile

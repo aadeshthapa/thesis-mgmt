@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRouter from "./routes/auth";
 import studentRouter from "./routes/student";
+import courseRoutes from "./routes/courses";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/student", studentRouter);
+app.use("/api/courses", courseRoutes);
 
 // Error handling middleware
 app.use(
