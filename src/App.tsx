@@ -10,6 +10,8 @@ import Login from "./pages/Login.js";
 import About from "./pages/About.js";
 import ThesisSubmission from "./pages/student/ThesisSubmission.js";
 import SupervisorDashboard from "./pages/supervisor/Dashboard.js";
+import CoursesList from "./pages/supervisor/CoursesList.js";
+import CourseStudents from "./pages/supervisor/CourseStudents.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import StudentLayout from "./components/layout/StudentLayout.js";
 import Register from "./pages/Register.js";
@@ -61,6 +63,13 @@ const App: React.FC = () => {
             />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/manage-users" element={<AdminDashboard />} />
+
+            {/* Supervisor Routes */}
+            <Route path="/supervisor/courses" element={<CoursesList />} />
+            <Route
+              path="/supervisor/courses/:courseId/students"
+              element={<CourseStudents />}
+            />
           </Routes>
         </div>
       </AuthProvider>
