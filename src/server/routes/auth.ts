@@ -39,16 +39,6 @@ router.post("/login", loginLimiter, async (req, res) => {
     const { email, password } = req.body;
     console.log("Login attempt for email:", email);
 
-    // Check if user exists first
-    const userExists = await userService.getUserByEmail(email);
-    if (!userExists) {
-      console.log("User not found with email:", email);
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    console.log("User found, verifying password...");
     const user = await authService.login(email, password);
 
     // Generate JWT token
@@ -67,7 +57,7 @@ router.post("/login", loginLimiter, async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(401).json({
-      message: error instanceof Error ? error.message : "Invalid credentials",
+      message: "Invalid email or password",
     });
   }
 });

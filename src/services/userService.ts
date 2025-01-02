@@ -232,6 +232,21 @@ class UserService {
       return false;
     }
   }
+
+  async updateStudentProfile(
+    userId: string,
+    data: {
+      studentId?: string;
+      department?: string;
+      program?: string;
+      enrollmentYear?: number;
+    }
+  ) {
+    return prisma.studentProfile.update({
+      where: { userId },
+      data,
+    });
+  }
 }
 
 export const userService = new UserService();
