@@ -17,6 +17,7 @@ import ForgotPassword from "./pages/ForgotPassword.js";
 import ResetPassword from "./pages/ResetPassword.js";
 import Profile from "./pages/student/Profile.js";
 import Submissions from "./pages/student/Submissions.js";
+import { StudentDashboard } from "./pages/student/Dashboard.js";
 
 const App: React.FC = () => {
   return (
@@ -44,6 +45,7 @@ const App: React.FC = () => {
 
             {/* Student Routes */}
             <Route path="/student/*" element={<StudentLayout />}>
+              <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
               <Route path="submit" element={<ThesisSubmission />} />
               <Route path="submissions" element={<Submissions />} />
