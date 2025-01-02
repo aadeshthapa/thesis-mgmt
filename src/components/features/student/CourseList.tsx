@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { courseService } from "../../services/courseService";
+import { useAuth } from "../../../contexts/AuthContext";
 
 interface Course {
   id: string;
@@ -14,7 +13,7 @@ interface CoursesByCategory {
 }
 
 export const CourseList: React.FC = () => {
-  const { user } = useAuth();
+  const { user, getAuthHeader } = useAuth();
   const [coursesByCategory, setCoursesByCategory] = useState<CoursesByCategory>(
     {}
   );
@@ -25,19 +24,48 @@ export const CourseList: React.FC = () => {
     const fetchCourses = async () => {
       try {
         if (user?.id) {
-          const courses = await courseService.getEnrolledCourses(user.id);
-          setCoursesByCategory(courses);
+          const response = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/courses/enrolled`,
+            {
+              headers: {
+                ...getAuthHeader(),
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch courses");
+          }
+
+          const courses: Course[] = await response.json();
+          console.log("Fetched courses:", courses);
+
+          // Group courses by category
+          const grouped = courses.reduce(
+            (acc: CoursesByCategory, course: Course) => {
+              const category = course.category || "Uncategorized";
+              if (!acc[category]) {
+                acc[category] = [];
+              }
+              acc[category].push(course);
+              return acc;
+            },
+            {} as CoursesByCategory
+          );
+
+          console.log("Grouped courses:", grouped);
+          setCoursesByCategory(grouped);
         }
       } catch (err) {
         setError("Failed to fetch enrolled courses");
-        console.error(err);
+        console.error("Error fetching courses:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
-  }, [user?.id]);
+  }, [user?.id, getAuthHeader]);
 
   if (loading) {
     return <div className="text-center py-4">Loading courses...</div>;
