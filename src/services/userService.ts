@@ -1,4 +1,10 @@
-import { PrismaClient, User, UserRole } from "@prisma/client";
+import {
+  PrismaClient,
+  User,
+  UserRole,
+  StudentProfile,
+  SupervisorProfile,
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -13,8 +19,13 @@ export type CreateUserInput = {
 
 export type UpdateUserInput = Partial<Omit<CreateUserInput, "role">>;
 
-class UserService {
-  async createUser(data: CreateUserInput): Promise<Omit<User, "passwordHash">> {
+type UserWithProfiles = User & {
+  studentProfile: StudentProfile | null;
+  supervisorProfile: SupervisorProfile | null;
+};
+
+export class UserService {
+  async createUser(data: CreateUserInput): Promise<User> {
     const { password, ...rest } = data;
     console.log("Creating user with password:", {
       email: rest.email,
@@ -29,23 +40,12 @@ class UserService {
       hash: passwordHash,
     });
 
-    const user = await prisma.user.create({
+    return prisma.user.create({
       data: {
         ...rest,
         passwordHash,
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-
-    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
@@ -54,49 +54,26 @@ class UserService {
     });
   }
 
-  async getUserById(id: string): Promise<Omit<User, "passwordHash"> | null> {
-    const user = await prisma.user.findUnique({
+  async getUserById(id: string): Promise<User | null> {
+    return prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-
-    return user;
   }
 
-  async updateUser(
-    id: string,
-    data: UpdateUserInput
-  ): Promise<Omit<User, "passwordHash">> {
-    const updateData: any = { ...data };
+  async updateUser(id: string, data: UpdateUserInput): Promise<User> {
+    const updateData: Partial<CreateUserInput & { passwordHash: string }> = {
+      ...data,
+    };
 
     if (data.password) {
       updateData.passwordHash = await bcrypt.hash(data.password, 10);
       delete updateData.password;
     }
 
-    const user = await prisma.user.update({
+    return prisma.user.update({
       where: { id },
       data: updateData,
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-
-    return user;
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -106,6 +83,7 @@ class UserService {
       });
       return true;
     } catch (error) {
+      console.error("Error deleting user:", error);
       return false;
     }
   }
@@ -148,7 +126,7 @@ class UserService {
       program: string;
       enrollmentYear: number;
     }
-  ) {
+  ): Promise<StudentProfile> {
     return prisma.studentProfile.create({
       data: {
         ...data,
@@ -160,7 +138,7 @@ class UserService {
   async createSupervisorProfile(
     userId: string,
     data: { department: string; specialization: string }
-  ) {
+  ): Promise<SupervisorProfile> {
     return prisma.supervisorProfile.create({
       data: {
         ...data,
@@ -169,54 +147,30 @@ class UserService {
     });
   }
 
-  async createAdminProfile(
-    userId: string,
-    data: {
-      department: string;
-      position: string;
-      permissions: string[];
-    }
-  ) {
-    return prisma.adminProfile.create({
-      data: {
-        ...data,
-        userId,
-      },
-    });
-  }
-
-  async getUserWithProfile(id: string) {
+  async getUserWithProfile(id: string): Promise<UserWithProfiles | null> {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
         studentProfile: true,
         supervisorProfile: true,
-        adminProfile: true,
       },
     });
 
-    if (!user) return null;
-
-    // Remove passwordHash from the response
-    const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user;
   }
 
-  async getUserWithProfileByEmail(email: string) {
+  async getUserWithProfileByEmail(
+    email: string
+  ): Promise<UserWithProfiles | null> {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
         studentProfile: true,
         supervisorProfile: true,
-        adminProfile: true,
       },
     });
 
-    if (!user) return null;
-
-    // Remove passwordHash from the response
-    const { passwordHash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user;
   }
 
   async resetPassword(email: string, newPassword: string): Promise<boolean> {
@@ -241,7 +195,7 @@ class UserService {
       program?: string;
       enrollmentYear?: number;
     }
-  ) {
+  ): Promise<StudentProfile> {
     return prisma.studentProfile.update({
       where: { userId },
       data,

@@ -7,12 +7,14 @@ interface Course {
   code: string;
   name: string;
   category: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const courseService = {
   async getEnrolledCourses(userId: string): Promise<Course[]> {
     try {
-      const enrollments = await prisma.enrollment.findMany({
+      const enrollments = await (prisma as any).enrollment.findMany({
         where: {
           userId: userId,
         },
@@ -21,7 +23,7 @@ export const courseService = {
         },
       });
 
-      return enrollments.map((enrollment) => ({
+      return enrollments.map((enrollment: any) => ({
         id: enrollment.course.id,
         code: enrollment.course.code,
         name: enrollment.course.name,
@@ -33,33 +35,46 @@ export const courseService = {
     }
   },
 
-  async getAllCourses() {
-    return prisma.course.findMany();
+  async getAllCourses(): Promise<Course[]> {
+    return (prisma as any).course.findMany();
   },
 
-  async getStudentCourses(userId: string) {
+  async getStudentCourses(userId: string): Promise<Course[]> {
     console.log("Getting courses for student:", userId);
-    const courses = await prisma.course.findMany({
+    const enrollments = await (prisma as any).enrollment.findMany({
       where: {
-        enrollments: {
-          some: {
-            userId,
-          },
-        },
+        userId: userId,
+      },
+      include: {
+        course: true,
       },
     });
+
+    const courses = enrollments.map((enrollment: any) => ({
+      id: enrollment.course.id,
+      code: enrollment.course.code,
+      name: enrollment.course.name,
+      category: enrollment.course.category,
+      createdAt: enrollment.course.createdAt,
+      updatedAt: enrollment.course.updatedAt,
+    }));
+
     console.log("Found courses in service:", courses);
     return courses;
   },
 
-  async createCourse(data: { code: string; name: string; category: string }) {
-    return prisma.course.create({
+  async createCourse(data: {
+    code: string;
+    name: string;
+    category: string;
+  }): Promise<Course> {
+    return (prisma as any).course.create({
       data,
     });
   },
 
   async enrollStudent(userId: string, courseId: string) {
-    return prisma.enrollment.create({
+    return (prisma as any).enrollment.create({
       data: {
         userId,
         courseId,
@@ -68,7 +83,7 @@ export const courseService = {
   },
 
   async unenrollStudent(userId: string, courseId: string) {
-    return prisma.enrollment.delete({
+    return (prisma as any).enrollment.delete({
       where: {
         userId_courseId: {
           userId,

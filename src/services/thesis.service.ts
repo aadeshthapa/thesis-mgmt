@@ -5,8 +5,9 @@ import {
   ThesisError,
 } from "../types/thesis.types";
 
+// Using Vite's environment variables
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001/api";
 
 class ApiError extends Error {
   constructor(
@@ -20,7 +21,7 @@ class ApiError extends Error {
 }
 
 // Add centralized error handling
-const handleApiError = (error: unknown, defaultMessage: string) => {
+const handleApiError = (error: unknown, defaultMessage: string): never => {
   if (axios.isAxiosError(error) && error.response) {
     throw new ApiError(
       error.response.data.message || defaultMessage,
@@ -32,7 +33,9 @@ const handleApiError = (error: unknown, defaultMessage: string) => {
 };
 
 export const thesisService = {
-  async submitThesis(data: ThesisSubmissionRequest): Promise<Thesis> {
+  async submitThesis(
+    data: ThesisSubmissionRequest
+  ): Promise<Thesis | undefined> {
     try {
       // First, get a pre-signed URL for file upload
       const { data: uploadData } = await axios.post(
@@ -74,10 +77,11 @@ export const thesisService = {
       return thesis;
     } catch (error) {
       handleApiError(error, "Failed to submit thesis");
+      return undefined;
     }
   },
 
-  async getTheses(): Promise<Thesis[]> {
+  async getTheses(): Promise<Thesis[] | undefined> {
     try {
       const { data } = await axios.get(`${API_BASE_URL}/thesis`, {
         headers: {
@@ -87,10 +91,11 @@ export const thesisService = {
       return data;
     } catch (error) {
       handleApiError(error, "Failed to fetch theses");
+      return undefined;
     }
   },
 
-  async getThesisById(id: string): Promise<Thesis> {
+  async getThesisById(id: string): Promise<Thesis | undefined> {
     try {
       const { data } = await axios.get(`${API_BASE_URL}/thesis/${id}`, {
         headers: {
@@ -100,6 +105,7 @@ export const thesisService = {
       return data;
     } catch (error) {
       handleApiError(error, "Failed to fetch thesis");
+      return undefined;
     }
   },
 };
