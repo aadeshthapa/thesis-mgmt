@@ -1,5 +1,6 @@
 import type { UserRole } from "@prisma/client";
 import { userService } from "./userService";
+import jwt from "jsonwebtoken";
 
 type BaseRegistrationData = {
   email: string;
@@ -106,7 +107,14 @@ class AuthService {
       throw new Error("Failed to load user profile");
     }
 
-    return userWithProfile;
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: userWithProfile.id, role: userWithProfile.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "24h" }
+    );
+
+    return { user: userWithProfile, token };
   }
 }
 
