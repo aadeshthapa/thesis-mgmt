@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .form-input {
+    @apply w-full rounded-md border-gray-300 shadow-sm;
+  }
+
+  .form-input:focus {
+    @apply border-blue-500 ring-blue-500;
+  }
+
+  /* Form element styles */
+  [type='text'],
+  [type='email'],
+  [type='url'],
+  [type='password'],
+  [type='number'],
+  [type='date'],
+  [type='datetime-local'],
+  [type='month'],
+  [type='search'],
+  [type='tel'],
+  [type='time'],
+  [type='week'],
+  [multiple],
+  textarea,
+  select {
+    @apply w-full rounded-md border-gray-300 shadow-sm;
+  }
+
+  [type='text']:focus,
+  [type='email']:focus,
+  [type='url']:focus,
+  [type='password']:focus,
+  [type='number']:focus,
+  [type='date']:focus,
+  [type='datetime-local']:focus,
+  [type='month']:focus,
+  [type='search']:focus,
+  [type='tel']:focus,
+  [type='time']:focus,
+  [type='week']:focus,
+  [multiple]:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-blue-500 ring-blue-500;
+  }
+
+  [type='checkbox'],
+  [type='radio'] {
+    @apply rounded border-gray-300 text-blue-600;
+  }
+
+  [type='checkbox']:focus,
+  [type='radio']:focus {
+    @apply ring-blue-500;
+  }
+}
