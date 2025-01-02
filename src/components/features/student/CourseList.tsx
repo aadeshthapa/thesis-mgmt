@@ -86,11 +86,12 @@ export const CourseList: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             {category}
           </h2>
+          {/* Course List Card Component   */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {courses.map((course) => (
               <div
                 key={course.id}
-                className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                className="bg-gray-100 rounded-lg p-4 hover:bg-gray-100 transition-colors"
               >
                 <h3 className="font-medium text-indigo-600">{course.code}</h3>
                 <p className="text-gray-600 mt-1">{course.name}</p>
