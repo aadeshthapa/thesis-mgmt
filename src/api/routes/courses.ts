@@ -23,7 +23,9 @@ router.get("/", authenticateToken, async (req: AuthRequest, res) => {
 router.get("/enrolled", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
+    console.log("Fetching courses for user:", userId);
     const courses = await courseService.getStudentCourses(userId);
+    console.log("Found courses:", courses);
     res.json(courses);
   } catch (error) {
     console.error("Error fetching enrolled courses:", error);
