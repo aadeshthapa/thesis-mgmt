@@ -32,9 +32,15 @@ const AdminDashboard: React.FC = () => {
     const fetchCourseCount = async () => {
       try {
         const courses = await courseService.getAllCourses();
+        console.log("Fetched courses:", courses);
         setTotalCourses(courses.length);
       } catch (error) {
         console.error("Error fetching course count:", error);
+        if (error instanceof Error) {
+          toast.error(`Failed to fetch courses: ${error.message}`);
+        } else {
+          toast.error("Failed to fetch courses");
+        }
       } finally {
         setLoading(false);
       }

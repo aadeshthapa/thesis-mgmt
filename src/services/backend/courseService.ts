@@ -1,43 +1,37 @@
 import { PrismaClient } from "@prisma/client";
-import type {
-  Course,
-  User,
-  Enrollment,
-  SupervisorCourse,
-} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-interface CourseWithRelations extends Course {
-  supervisors: (SupervisorCourse & {
-    supervisor: User;
-  })[];
-  _count: {
-    enrollments: number;
-  };
+interface SupervisorInfo {
+  id: string;
+  firstName: string;
+  lastName: string;
 }
 
-interface EnrollmentWithUser extends Enrollment {
-  user: User & {
-    studentProfile: {
-      studentId: string;
-    } | null;
-  };
+interface CourseWithDetails {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  supervisors: SupervisorInfo[];
+  enrolledCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface EnrollmentWithCourse extends Enrollment {
-  course: Course & {
-    _count: {
-      enrollments: number;
-    };
+interface SupervisorWithDetails {
+  supervisor: {
+    id: string;
+    firstName: string;
+    lastName: string;
   };
 }
 
 class CourseService {
-  async getAllCourses() {
+  async getAllCourses(): Promise<CourseWithDetails[]> {
     try {
       console.log("Fetching all courses with enrollments...");
-      const courses = await prisma.course.findMany({
+      const courses = await (prisma as any).course.findMany({
         include: {
           supervisors: {
             include: {
@@ -49,33 +43,83 @@ class CourseService {
               enrollments: true,
             },
           },
-          enrollments: true,
         },
       });
 
       console.log("Raw courses data:", JSON.stringify(courses, null, 2));
 
-      return (courses as CourseWithRelations[]).map((course) => {
-        console.log(
-          `Course ${course.code} has ${course._count.enrollments} enrollments`
-        );
-        return {
+      if (!Array.isArray(courses)) {
+        console.error("Courses is not an array:", courses);
+        return [];
+      }
+
+      if (courses.length === 0) {
+        console.log("No courses found");
+        return [];
+      }
+
+      console.log(
+        "First course structure:",
+        JSON.stringify(courses[0], null, 2)
+      );
+
+      const transformedCourses = courses.map((course) => {
+        if (!course) {
+          console.error("Course is undefined");
+          return null;
+        }
+
+        console.log("Processing course ID:", course.id);
+        console.log("Course structure:", {
           id: course.id,
           code: course.code,
           name: course.name,
           category: course.category,
-          supervisors: course.supervisors.map(
-            (s: SupervisorCourse & { supervisor: User }) => ({
-              id: s.supervisor.id,
-              firstName: s.supervisor.firstName,
-              lastName: s.supervisor.lastName,
-            })
-          ),
-          enrolledCount: course._count.enrollments,
+          supervisorsCount: course.supervisors?.length,
+          enrollmentsCount: course._count?.enrollments,
+        });
+
+        const supervisors = Array.isArray(course.supervisors)
+          ? course.supervisors
+              .filter((s: SupervisorWithDetails) => {
+                const isValid = s && s.supervisor;
+                if (!isValid) {
+                  console.error("Invalid supervisor entry:", s);
+                }
+                return isValid;
+              })
+              .map((s: SupervisorWithDetails) => {
+                console.log("Processing supervisor:", s.supervisor);
+                return {
+                  id: s.supervisor.id,
+                  firstName: s.supervisor.firstName,
+                  lastName: s.supervisor.lastName,
+                };
+              })
+          : [];
+
+        console.log("Processed supervisors:", supervisors);
+
+        const result = {
+          id: course.id,
+          code: course.code,
+          name: course.name,
+          category: course.category,
+          supervisors,
+          enrolledCount: course._count?.enrollments || 0,
           createdAt: course.createdAt,
           updatedAt: course.updatedAt,
         };
+
+        console.log("Transformed course:", result);
+        return result;
       });
+
+      const validCourses = transformedCourses.filter(
+        Boolean
+      ) as CourseWithDetails[];
+      console.log("Final courses count:", validCourses.length);
+      return validCourses;
     } catch (error) {
       console.error("Error in getAllCourses:", error);
       throw error;
@@ -84,7 +128,7 @@ class CourseService {
 
   async createCourse(data: { code: string; name: string; category: string }) {
     try {
-      return await prisma.course.create({
+      return await (prisma as any).course.create({
         data,
         include: {
           _count: {
@@ -103,21 +147,21 @@ class CourseService {
   async deleteCourse(courseId: string) {
     try {
       // First delete all enrollments
-      await prisma.enrollment.deleteMany({
+      await (prisma as any).enrollment.deleteMany({
         where: {
           courseId,
         },
       });
 
       // Then delete all supervisor assignments
-      await prisma.supervisorCourse.deleteMany({
+      await (prisma as any).supervisorCourse.deleteMany({
         where: {
           courseId,
         },
       });
 
       // Finally delete the course
-      return await prisma.course.delete({
+      return await (prisma as any).course.delete({
         where: {
           id: courseId,
         },
@@ -130,7 +174,7 @@ class CourseService {
 
   async enrollStudent(courseId: string, studentId: string) {
     try {
-      return await prisma.enrollment.create({
+      return await (prisma as any).enrollment.create({
         data: {
           userId: studentId,
           courseId,
@@ -144,7 +188,7 @@ class CourseService {
 
   async unenrollStudent(courseId: string, studentId: string) {
     try {
-      return await prisma.enrollment.delete({
+      return await (prisma as any).enrollment.delete({
         where: {
           userId_courseId: {
             userId: studentId,
@@ -160,7 +204,7 @@ class CourseService {
 
   async getCourseStudents(courseId: string) {
     try {
-      const enrollments = await prisma.enrollment.findMany({
+      const enrollments = await (prisma as any).enrollment.findMany({
         where: {
           courseId,
         },
@@ -173,11 +217,11 @@ class CourseService {
         },
       });
 
-      return (enrollments as EnrollmentWithUser[]).map((enrollment) => ({
+      return enrollments.map((enrollment: any) => ({
         id: enrollment.user.id,
-        studentId: enrollment.user.studentProfile?.studentId || "",
         firstName: enrollment.user.firstName,
         lastName: enrollment.user.lastName,
+        studentId: enrollment.user.studentProfile?.studentId,
       }));
     } catch (error) {
       console.error("Error in getCourseStudents:", error);
@@ -187,7 +231,7 @@ class CourseService {
 
   async getStudentCourses(userId: string) {
     try {
-      const enrollments = await prisma.enrollment.findMany({
+      const enrollments = await (prisma as any).enrollment.findMany({
         where: {
           userId,
         },
@@ -204,8 +248,11 @@ class CourseService {
         },
       });
 
-      return (enrollments as EnrollmentWithCourse[]).map((enrollment) => ({
-        ...enrollment.course,
+      return enrollments.map((enrollment: any) => ({
+        id: enrollment.course.id,
+        code: enrollment.course.code,
+        name: enrollment.course.name,
+        category: enrollment.course.category,
         enrolledCount: enrollment.course._count.enrollments,
       }));
     } catch (error) {

@@ -33,7 +33,10 @@ export interface Supervisor {
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+  return { Authorization: `Bearer ${token}` };
 };
 
 export const courseService = {
@@ -42,11 +45,10 @@ export const courseService = {
     try {
       console.log("Fetching courses from:", `${API_URL}/api/courses`);
 
-      // Use the original endpoint
       const response = await axios.get(`${API_URL}/api/courses`, {
         headers: {
           ...getAuthHeader(),
-          "Include-Counts": "true", // Request enrollment counts from the API
+          "Include-Counts": "true" as string,
         },
       });
 
@@ -55,55 +57,55 @@ export const courseService = {
         JSON.stringify(response.data, null, 2)
       );
 
-      const courses = response.data.map((course: any) => {
-        console.log(`Processing course ${course.code}:`, {
-          enrollments: course.enrollments,
-          _count: course._count,
-          rawCourse: course,
+      // Validate response data
+      if (!Array.isArray(response.data)) {
+        console.error("Invalid response data - expected array:", response.data);
+        return [];
+      }
+
+      const courses = response.data
+        .filter((course: any) => {
+          if (!course || !course.id) {
+            console.error("Invalid course data:", course);
+            return false;
+          }
+          return true;
+        })
+        .map((course: any) => {
+          console.log(`Processing course:`, course);
+
+          return {
+            id: course.id,
+            code: course.code || "",
+            name: course.name || "",
+            category: course.category || "",
+            supervisors: Array.isArray(course.supervisors)
+              ? course.supervisors
+                  .filter((s: any) => s && s.supervisor)
+                  .map((s: any) => ({
+                    id: s.supervisor.id,
+                    firstName: s.supervisor.firstName || "",
+                    lastName: s.supervisor.lastName || "",
+                  }))
+              : [],
+            enrolledCount: course._count?.enrollments || 0,
+            createdAt: course.createdAt || new Date().toISOString(),
+            updatedAt: course.updatedAt || new Date().toISOString(),
+          };
         });
 
-        return {
-          id: course.id,
-          code: course.code,
-          name: course.name,
-          category: course.category,
-          supervisors:
-            course.supervisors?.map((s: any) => ({
-              id: s.supervisor.id,
-              firstName: s.supervisor.firstName,
-              lastName: s.supervisor.lastName,
-            })) || [],
-          enrolledCount:
-            course.enrolledCount ||
-            course._count?.enrollments ||
-            course.enrollments?.length ||
-            0,
-          createdAt: course.createdAt,
-          updatedAt: course.updatedAt,
-        };
-      });
-
-      console.log(
-        "Courses with enrollment counts:",
-        courses.map((c: Course) => ({
-          code: c.code,
-          enrolledCount: c.enrolledCount,
-        }))
-      );
-
+      console.log("Processed courses:", courses);
       return courses;
     } catch (error) {
+      console.error("Error fetching courses:", error);
       if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        console.error("API Error:", {
-          status: axiosError.response?.status,
-          data: axiosError.response?.data,
-          config: axiosError.config,
-        });
-        if (axiosError.response?.status === 404) {
+        if (error.response?.status === 401) {
+          window.location.href = "/login";
           return [];
         }
-        throw error;
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch courses"
+        );
       }
       throw error;
     }

@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import type { Course } from "../../services/courseService";
 import axios from "axios";
 import { AxiosError } from "axios";
+import AddSupervisorModal from "../../components/AddSupervisorModal";
 
 interface AddCourseModalProps {
   isOpen: boolean;
@@ -152,6 +153,11 @@ const CoursesList: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [selectedCourseId, setSelectedCourseId] = React.useState<string | null>(
+    null
+  );
+  const [isAddSupervisorModalOpen, setIsAddSupervisorModalOpen] =
+    React.useState(false);
 
   const fetchCourses = async () => {
     try {
@@ -266,10 +272,36 @@ const CoursesList: React.FC = () => {
     }
   };
 
+  const handleAddSupervisorClick = (courseId: string) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) {
+      toast.error("Course not found");
+      return;
+    }
+    setSelectedCourseId(courseId);
+    setIsAddSupervisorModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-500">Loading courses...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-red-500">
+          <p>{error}</p>
+          <button
+            onClick={fetchCourses}
+            className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -427,9 +459,7 @@ const CoursesList: React.FC = () => {
                         Manage Students
                       </Link>
                       <button
-                        onClick={() => {
-                          /* TODO: Add supervisor modal */
-                        }}
+                        onClick={() => handleAddSupervisorClick(course.id)}
                         className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                       >
                         Add Supervisor
@@ -458,6 +488,18 @@ const CoursesList: React.FC = () => {
               ))}
             </div>
           </div>
+        )}
+
+        {selectedCourseId && (
+          <AddSupervisorModal
+            isOpen={isAddSupervisorModalOpen}
+            onClose={() => {
+              setIsAddSupervisorModalOpen(false);
+              setSelectedCourseId(null);
+            }}
+            courseId={selectedCourseId}
+            onSupervisorAdded={fetchCourses}
+          />
         )}
       </div>
     </div>

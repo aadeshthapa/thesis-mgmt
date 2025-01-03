@@ -1,5 +1,10 @@
 import express from "express";
-import { PrismaClient, User, StudentProfile } from "@prisma/client";
+import {
+  PrismaClient,
+  User,
+  StudentProfile,
+  SupervisorProfile,
+} from "@prisma/client";
 import { authenticateToken, authorizeRoles } from "../middleware/auth";
 import bcrypt from "bcrypt";
 import { supervisorService } from "../../services/supervisorService";
@@ -9,6 +14,10 @@ const prisma = new PrismaClient();
 
 interface UserWithStudentProfile extends User {
   studentProfile: StudentProfile | null;
+}
+
+interface UserWithSupervisorProfile extends User {
+  supervisorProfile: SupervisorProfile | null;
 }
 
 // Log all requests to admin routes
@@ -57,6 +66,56 @@ router.get("/students/search", async (req, res) => {
   } catch (error) {
     console.error("Error searching students:", error);
     res.status(500).json({ message: "Failed to search students" });
+  }
+});
+
+// Search supervisors endpoint
+router.get("/supervisors/search", async (req, res) => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    console.log("Searching supervisors with query:", query);
+    const supervisors = (await prisma.user.findMany({
+      where: {
+        role: "SUPERVISOR",
+        OR: [
+          { firstName: { contains: query, mode: "insensitive" } },
+          { lastName: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        supervisorProfile: true,
+      },
+    })) as UserWithSupervisorProfile[];
+
+    console.log(`Found ${supervisors.length} matching supervisors`);
+
+    // Format the response to match the Supervisor interface expected by the frontend
+    const formattedSupervisors = supervisors
+      .map((supervisor) => {
+        if (!supervisor.supervisorProfile) {
+          return null;
+        }
+        return {
+          id: supervisor.id,
+          firstName: supervisor.firstName,
+          lastName: supervisor.lastName,
+          department: supervisor.supervisorProfile.department,
+        };
+      })
+      .filter(
+        (supervisor): supervisor is NonNullable<typeof supervisor> =>
+          supervisor !== null
+      );
+
+    res.json(formattedSupervisors);
+  } catch (error) {
+    console.error("Error searching supervisors:", error);
+    res.status(500).json({ message: "Failed to search supervisors" });
   }
 });
 
@@ -193,6 +252,44 @@ router.get("/supervisors", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch supervisors" });
   }
 });
+
+// Assign supervisor to course
+router.post("/courses/:courseId/supervisors", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { supervisorId } = req.body;
+
+    if (!courseId || !supervisorId) {
+      return res
+        .status(400)
+        .json({ message: "Course ID and Supervisor ID are required" });
+    }
+
+    await supervisorService.assignCourseToSupervisor(supervisorId, courseId);
+    res.status(201).json({ message: "Supervisor assigned successfully" });
+  } catch (error) {
+    console.error("Error assigning supervisor:", error);
+    res.status(500).json({ message: "Failed to assign supervisor" });
+  }
+});
+
+// Remove supervisor from course
+router.delete(
+  "/courses/:courseId/supervisors/:supervisorId",
+  async (req, res) => {
+    try {
+      const { courseId, supervisorId } = req.params;
+      await supervisorService.removeCourseFromSupervisor(
+        supervisorId,
+        courseId
+      );
+      res.json({ message: "Supervisor removed successfully" });
+    } catch (error) {
+      console.error("Error removing supervisor:", error);
+      res.status(500).json({ message: "Failed to remove supervisor" });
+    }
+  }
+);
 
 // Export the router
 export default router;
