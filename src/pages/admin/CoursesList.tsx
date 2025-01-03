@@ -227,33 +227,30 @@ const CoursesList: React.FC = () => {
       return;
     }
 
-    // Show different confirmation messages based on enrollments
     const confirmMessage =
       course.enrolledCount > 0
         ? `This course has ${course.enrolledCount} enrolled student(s). Deleting it will remove all enrollments. Are you sure?`
-        : "Are you sure you want to delete this course? This action cannot be undone.";
+        : "Are you sure you want to delete this course?";
 
-    if (window.confirm(confirmMessage)) {
-      try {
-        setLoading(true);
-        console.log("Attempting to delete course with ID:", courseId);
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
 
-        await courseService.deleteCourse(courseId);
-        toast.success("Course deleted successfully");
+    try {
+      // Update UI first
+      setCourses((prevCourses) => prevCourses.filter((c) => c.id !== courseId));
 
-        // Update local state
-        setCourses((prevCourses) =>
-          prevCourses.filter((c) => c.id !== courseId)
-        );
-      } catch (error) {
-        console.error("Error deleting course:", error);
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("Failed to delete course. Please try again.");
-        }
-      } finally {
-        setLoading(false);
+      // Then sync with backend
+      await courseService.deleteCourse(courseId);
+      toast.success("Course deleted successfully");
+    } catch (error) {
+      // Revert the state if backend call fails
+      setCourses((prevCourses) => [...prevCourses, course]);
+      console.error("Error deleting course:", error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete course. Please try again.");
       }
     }
   };
