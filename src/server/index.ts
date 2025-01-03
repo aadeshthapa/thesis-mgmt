@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import authRouter from "../api/routes/auth";
 import studentRouter from "../api/routes/student";
 import courseRoutes from "../api/routes/courses";
+import adminRouter from "../api/routes/admin";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/student", studentRouter);
 app.use("/api/courses", courseRoutes);
+app.use("/api/admin", adminRouter);
 
 // Error handling middleware
 app.use(

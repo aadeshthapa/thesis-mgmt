@@ -17,6 +17,7 @@ const CourseStudents: React.FC = () => {
   const [searchResults, setSearchResults] = React.useState<Student[]>([]);
   const [isSearching, setIsSearching] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const searchTimeout = React.useRef<NodeJS.Timeout>();
 
   React.useEffect(() => {
     const fetchEnrolledStudents = async () => {
@@ -41,29 +42,55 @@ const CourseStudents: React.FC = () => {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (query.length >= 2) {
+
+    // Clear previous timeout
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    // Set a new timeout for debouncing
+    searchTimeout.current = setTimeout(async () => {
       setIsSearching(true);
       try {
         console.log("Searching students with query:", query);
         const results = await courseService.searchStudents(query);
         console.log("Search results:", results);
+
+        if (!results || results.length === 0) {
+          setSearchResults([]);
+          return;
+        }
+
         // Filter out already enrolled students
         const filteredResults = results.filter(
           (student) =>
             !enrolledStudents.some((enrolled) => enrolled.id === student.id)
         );
-        console.log("Filtered results:", filteredResults);
+        console.log("Filtered results (excluding enrolled):", filteredResults);
         setSearchResults(filteredResults);
       } catch (error) {
         console.error("Error searching students:", error);
         toast.error("Failed to search students. Please try again.");
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
-    } else {
-      setSearchResults([]);
-    }
+    }, 300); // 300ms debounce delay
   };
+
+  // Cleanup timeout on component unmount
+  React.useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
 
   const handleEnrollStudent = async (studentId: string) => {
     if (!courseId) return;
@@ -134,50 +161,88 @@ const CourseStudents: React.FC = () => {
             >
               Search Students
             </label>
-            <div className="mt-1">
+            <div className="mt-1 relative">
               <input
                 type="text"
                 name="search"
                 id="search"
                 className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                placeholder="Search by name or ID..."
+                placeholder="Type at least 2 characters to search..."
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
               />
+              {isSearching && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <svg
+                    className="animate-spin h-5 w-5 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+              )}
             </div>
+            {searchQuery.length === 1 && (
+              <p className="mt-1 text-sm text-gray-500">
+                Type one more character to start searching...
+              </p>
+            )}
           </div>
 
           {/* Search Results */}
           {searchQuery.length >= 2 && (
             <div className="mt-4">
               {isSearching ? (
-                <p className="text-gray-500">Searching...</p>
+                <p className="text-gray-500">Searching for students...</p>
               ) : (
                 <div className="space-y-2">
                   {searchResults.map((student) => (
                     <div
                       key={student.id}
-                      className="flex items-center justify-between bg-white p-4 rounded-lg shadow"
+                      className="flex items-center justify-between bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-200"
                     >
                       <div>
                         <p className="font-medium">
                           {student.firstName} {student.lastName}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {student.studentId}
+                          Student ID: {student.studentId}
                         </p>
                       </div>
                       <button
                         onClick={() => handleEnrollStudent(student.id)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
                       >
                         Add to Course
                       </button>
                     </div>
                   ))}
-                  {searchResults.length === 0 && (
-                    <p className="text-gray-500">No matching students found</p>
-                  )}
+                  {searchResults.length === 0 &&
+                    searchQuery.length >= 2 &&
+                    !isSearching && (
+                      <div className="text-center py-4">
+                        <p className="text-gray-500">
+                          No matching students found
+                        </p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Try a different search term
+                        </p>
+                      </div>
+                    )}
                 </div>
               )}
             </div>

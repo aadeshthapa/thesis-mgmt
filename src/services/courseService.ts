@@ -259,13 +259,26 @@ export const courseService = {
   },
 
   searchStudents: async (query: string): Promise<Student[]> => {
-    const response = await axios.get(
-      `${API_URL}/api/students/search?q=${encodeURIComponent(query)}`,
-      {
-        headers: getAuthHeader(),
+    try {
+      console.log(
+        "Searching students with URL:",
+        `${API_URL}/api/admin/students/search?q=${encodeURIComponent(query)}`
+      );
+      const response = await axios.get(
+        `${API_URL}/api/admin/students/search?q=${encodeURIComponent(query)}`,
+        {
+          headers: getAuthHeader(),
+        }
+      );
+      console.log("Search response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Search students error:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return [];
       }
-    );
-    return response.data;
+      throw error;
+    }
   },
 
   enrollStudent: async (courseId: string, studentId: string): Promise<void> => {
