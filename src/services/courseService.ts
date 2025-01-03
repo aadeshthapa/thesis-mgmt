@@ -339,4 +339,24 @@ export const courseService = {
       updatedAt: course.updatedAt || new Date().toISOString(),
     };
   },
+
+  addAssignments: async (courseId: string): Promise<void> => {
+    const assignments = ["Project Proposal", "Progress Report", "Final Report"];
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/assignments/course/${courseId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ assignments }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to add assignments");
+    }
+  },
 };

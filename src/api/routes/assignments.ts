@@ -1,6 +1,10 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
-import { authenticateToken, AuthRequest } from "../middleware/auth";
+import {
+  authenticateToken,
+  AuthRequest,
+  authorizeRoles,
+} from "../middleware/auth";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
@@ -47,6 +51,36 @@ const upload = multer({
   },
 });
 
+// Create assignments for a course (admin only)
+router.post(
+  "/course/:courseId",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const { assignments } = req.body;
+
+      // Create all three assignments
+      const createdAssignments = await prisma.$transaction(
+        assignments.map((title: string) =>
+          prisma.assignment.create({
+            data: {
+              title,
+              courseId,
+            },
+          })
+        )
+      );
+
+      res.status(201).json(createdAssignments);
+    } catch (error) {
+      console.error("Error creating assignments:", error);
+      res.status(500).json({ message: "Failed to create assignments" });
+    }
+  }
+);
+
 // Get assignments for a course
 router.get(
   "/course/:courseId",
@@ -85,12 +119,27 @@ router.get(
               grade: true,
               feedback: true,
               submissionDate: true,
+              fileUrl: true,
             },
           },
         },
       });
 
-      res.json(assignments);
+      // Format the response to match the expected interface
+      const formattedAssignments = assignments.map((assignment) => {
+        const submission = assignment.submissions[0];
+        return {
+          id: assignment.id,
+          title: assignment.title,
+          status: submission?.status || "PENDING",
+          grade: submission?.grade,
+          feedback: submission?.feedback,
+          submissionDate: submission?.submissionDate,
+          fileUrl: submission?.fileUrl,
+        };
+      });
+
+      res.json(formattedAssignments);
     } catch (error) {
       console.error("Error fetching assignments:", error);
       res.status(500).json({ message: "Failed to fetch assignments" });
@@ -292,7 +341,7 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// Submit grade for an assignment
+// Grade a submission
 router.post(
   "/submissions/:submissionId/grade",
   authenticateToken,
@@ -302,19 +351,21 @@ router.post(
       const { grade, feedback } = req.body;
       const userId = req.user!.userId;
 
-      if (typeof grade !== "number" || grade < 0 || grade > 100) {
-        return res
-          .status(400)
-          .json({ message: "Invalid grade. Must be between 0 and 100." });
-      }
-
-      // Verify user is a supervisor and has access to this submission
+      // Verify the submission exists
       const submission = await prisma.assignmentSubmission.findUnique({
         where: { id: submissionId },
         include: {
           assignment: {
             include: {
-              course: true,
+              course: {
+                include: {
+                  supervisors: {
+                    where: {
+                      supervisorId: userId,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -324,22 +375,14 @@ router.post(
         return res.status(404).json({ message: "Submission not found" });
       }
 
-      const supervisorCourse = await prisma.supervisorCourse.findUnique({
-        where: {
-          supervisorId_courseId: {
-            supervisorId: userId,
-            courseId: submission.assignment.courseId,
-          },
-        },
-      });
-
-      if (!supervisorCourse) {
-        return res.status(403).json({
-          message: "Access denied. Not authorized to grade this submission.",
-        });
+      // Verify user is a supervisor for this course
+      if (submission.assignment.course.supervisors.length === 0) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized to grade this submission" });
       }
 
-      // Update the submission with grade and feedback
+      // Update the submission
       const updatedSubmission = await prisma.assignmentSubmission.update({
         where: { id: submissionId },
         data: {
@@ -351,8 +394,8 @@ router.post(
 
       res.json(updatedSubmission);
     } catch (error) {
-      console.error("Error submitting grade:", error);
-      res.status(500).json({ message: "Failed to submit grade" });
+      console.error("Error grading submission:", error);
+      res.status(500).json({ message: "Failed to grade submission" });
     }
   }
 );
