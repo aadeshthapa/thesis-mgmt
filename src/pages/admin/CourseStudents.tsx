@@ -59,7 +59,7 @@ const CourseStudents: React.FC = () => {
       try {
         console.log("Searching students with query:", query);
         const results = await courseService.searchStudents(query);
-        console.log("Search results:", results);
+        console.log("Raw search results:", JSON.stringify(results, null, 2));
 
         if (!results || results.length === 0) {
           setSearchResults([]);
@@ -71,7 +71,10 @@ const CourseStudents: React.FC = () => {
           (student) =>
             !enrolledStudents.some((enrolled) => enrolled.id === student.id)
         );
-        console.log("Filtered results (excluding enrolled):", filteredResults);
+        console.log(
+          "Filtered results:",
+          JSON.stringify(filteredResults, null, 2)
+        );
         setSearchResults(filteredResults);
       } catch (error) {
         console.error("Error searching students:", error);
@@ -220,7 +223,7 @@ const CourseStudents: React.FC = () => {
                           {student.firstName} {student.lastName}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Student ID: {student.studentId}
+                          {student.studentId}
                         </p>
                       </div>
                       <button
