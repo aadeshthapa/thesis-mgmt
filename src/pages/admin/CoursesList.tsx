@@ -38,7 +38,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
       onClose();
     } catch (error) {
       console.error("Error adding course:", error);
-      toast.error("Failed to add course. Please try again.");
+      toast.error("Failed to add course. Please try again!");
     } finally {
       setIsSubmitting(false);
     }
