@@ -3,10 +3,13 @@ import { Link } from "react-router-dom";
 import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
 import { courseService } from "../../services/courseService";
+import { supervisorService } from "../../services/supervisorService";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const [totalCourses, setTotalCourses] = React.useState<number>(0);
+  const [totalStudents, setTotalStudents] = React.useState<number>(0);
+  const [totalSupervisors, setTotalSupervisors] = React.useState<number>(0);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -22,6 +25,23 @@ const AdminDashboard: React.FC = () => {
     };
 
     fetchCourseCount();
+  }, []);
+
+  React.useEffect(() => {
+    const fetchUserCounts = async () => {
+      try {
+        const [students, supervisors] = await Promise.all([
+          supervisorService.getTotalStudents(),
+          supervisorService.getTotalSupervisors(),
+        ]);
+        setTotalStudents(students);
+        setTotalSupervisors(supervisors);
+      } catch (error) {
+        console.error("Error fetching user counts:", error);
+      }
+    };
+
+    fetchUserCounts();
   }, []);
 
   return (
@@ -79,69 +99,77 @@ const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                    <svg
-                      className="h-6 w-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Total Students
-                    </h2>
-                    <div className="mt-1">
-                      <span className="text-2xl font-semibold text-blue-600">
-                        150
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">active</span>
+              <Link to="/admin/students" className="block">
+                <div className="p-6">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                      <svg
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-5">
+                      <h2 className="text-lg font-medium text-gray-900">
+                        Total Students
+                      </h2>
+                      <div className="mt-1">
+                        <span className="text-2xl font-semibold text-blue-600">
+                          {totalStudents}
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          active
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
 
             <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                    <svg
-                      className="h-6 w-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Total Supervisors
-                    </h2>
-                    <div className="mt-1">
-                      <span className="text-2xl font-semibold text-green-600">
-                        25
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">active</span>
+              <Link to="/admin/supervisors" className="block">
+                <div className="p-6">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                      <svg
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-5">
+                      <h2 className="text-lg font-medium text-gray-900">
+                        Total Supervisors
+                      </h2>
+                      <div className="mt-1">
+                        <span className="text-2xl font-semibold text-green-600">
+                          {totalSupervisors}
+                        </span>
+                        <span className="ml-2 text-sm text-gray-500">
+                          active
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
 

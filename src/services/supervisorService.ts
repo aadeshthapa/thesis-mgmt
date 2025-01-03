@@ -26,6 +26,22 @@ interface SupervisorWithCourses extends User {
 }
 
 class SupervisorService {
+  async getTotalStudents(): Promise<number> {
+    return prisma.user.count({
+      where: {
+        role: "STUDENT",
+      },
+    });
+  }
+
+  async getTotalSupervisors(): Promise<number> {
+    return prisma.user.count({
+      where: {
+        role: "SUPERVISOR",
+      },
+    });
+  }
+
   async getSupervisors(searchQuery?: string): Promise<User[]> {
     return prisma.user.findMany({
       where: {

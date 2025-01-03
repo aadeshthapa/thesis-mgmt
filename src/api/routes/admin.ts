@@ -1,57 +1,51 @@
 import express from "express";
-import {
-  authenticateToken,
-  authorizeRoles,
-  AuthRequest,
-} from "../middleware/auth";
-import { supervisorService } from "../../services/supervisorService";
-import { User, StudentProfile } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { authenticateToken, authorizeRoles } from "../middleware/auth";
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Protect all admin routes
 router.use(authenticateToken);
 router.use(authorizeRoles("ADMIN"));
 
-interface UserWithStudentProfile extends User {
-  studentProfile: StudentProfile | null;
-}
-
-// Search students endpoint
-router.get("/students/search", async (req: AuthRequest, res) => {
+// Get all students
+router.get("/students", async (req, res) => {
+  console.log("GET /api/admin/students endpoint hit");
   try {
-    const query = req.query.q as string;
-    if (!query) {
-      return res.status(400).json({ message: "Search query is required" });
-    }
-
-    const students = (await supervisorService.getStudents(
-      query
-    )) as UserWithStudentProfile[];
-
-    // Format the response to match the Student interface expected by the frontend
-    const formattedStudents = students
-      .map((student) => {
-        const studentId = student.studentProfile?.studentId;
-        // Only include students who have a studentId
-        if (!studentId) {
-          return null;
-        }
-        return {
-          id: student.id,
-          firstName: student.firstName,
-          lastName: student.lastName,
-          studentId: studentId,
-        };
-      })
-      .filter(
-        (student): student is NonNullable<typeof student> => student !== null
-      );
-
-    res.json(formattedStudents);
+    const students = await prisma.user.findMany({
+      where: {
+        role: "STUDENT",
+      },
+      include: {
+        studentProfile: true,
+      },
+    });
+    console.log(`Found ${students.length} students`);
+    res.json(students);
   } catch (error) {
-    console.error("Error searching students:", error);
-    res.status(500).json({ message: "Failed to search students" });
+    console.error("Error fetching students:", error);
+    res.status(500).json({ error: "Failed to fetch students" });
+  }
+});
+
+// Get all supervisors
+router.get("/supervisors", async (req, res) => {
+  console.log("GET /api/admin/supervisors endpoint hit");
+  try {
+    const supervisors = await prisma.user.findMany({
+      where: {
+        role: "SUPERVISOR",
+      },
+      include: {
+        supervisorProfile: true,
+      },
+    });
+    console.log(`Found ${supervisors.length} supervisors`);
+    res.json(supervisors);
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res.status(500).json({ error: "Failed to fetch supervisors" });
   }
 });
 

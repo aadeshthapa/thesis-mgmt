@@ -15,6 +15,8 @@ import CourseStudents from "./pages/supervisor/CourseStudents.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminCoursesList from "./pages/admin/CoursesList.js";
 import AdminCourseStudents from "./pages/admin/CourseStudents.js";
+import Students from "./pages/admin/Students.js";
+import Supervisors from "./pages/admin/Supervisors.js";
 import StudentLayout from "./components/layout/StudentLayout.js";
 import Register from "./pages/Register.js";
 import ForgotPassword from "./pages/ForgotPassword.js";
@@ -69,6 +71,8 @@ const App: React.FC = () => {
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/courses" element={<AdminCoursesList />} />
+            <Route path="/admin/students" element={<Students />} />
+            <Route path="/admin/supervisors" element={<Supervisors />} />
             <Route
               path="/admin/courses/:courseId/students"
               element={<AdminCourseStudents />}
