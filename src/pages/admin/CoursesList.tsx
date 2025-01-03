@@ -7,6 +7,7 @@ import type { Course } from "../../services/courseService";
 import axios from "axios";
 import { AxiosError } from "axios";
 import AddSupervisorModal from "../../components/AddSupervisorModal";
+import AddAssignmentModal from "../../components/AddAssignmentModal";
 
 interface AddCourseModalProps {
   isOpen: boolean;
@@ -158,6 +159,8 @@ const CoursesList: React.FC = () => {
   );
   const [isAddSupervisorModalOpen, setIsAddSupervisorModalOpen] =
     React.useState(false);
+  const [isAddAssignmentModalOpen, setIsAddAssignmentModalOpen] =
+    React.useState(false);
 
   const fetchCourses = async () => {
     try {
@@ -282,15 +285,14 @@ const CoursesList: React.FC = () => {
     setIsAddSupervisorModalOpen(true);
   };
 
-  const handleAddAssignments = async (courseId: string) => {
-    try {
-      await courseService.addAssignments(courseId);
-      toast.success("Assignments added successfully");
-      fetchCourses(); // Refresh the list
-    } catch (error) {
-      console.error("Error adding assignments:", error);
-      toast.error("Failed to add assignments. Please try again.");
+  const handleAddAssignmentClick = (courseId: string) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) {
+      toast.error("Course not found");
+      return;
     }
+    setSelectedCourseId(courseId);
+    setIsAddAssignmentModalOpen(true);
   };
 
   if (loading) {
@@ -473,10 +475,10 @@ const CoursesList: React.FC = () => {
                         Add Supervisor
                       </button>
                       <button
-                        onClick={() => handleAddAssignments(course.id)}
+                        onClick={() => handleAddAssignmentClick(course.id)}
                         className="inline-flex justify-center items-center px-4 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-white hover:bg-green-50"
                       >
-                        Add Assignments
+                        Add Assignment
                       </button>
                       <div className="col-span-2">
                         <button
@@ -508,15 +510,26 @@ const CoursesList: React.FC = () => {
         )}
 
         {selectedCourseId && (
-          <AddSupervisorModal
-            isOpen={isAddSupervisorModalOpen}
-            onClose={() => {
-              setIsAddSupervisorModalOpen(false);
-              setSelectedCourseId(null);
-            }}
-            courseId={selectedCourseId}
-            onSupervisorAdded={fetchCourses}
-          />
+          <>
+            <AddSupervisorModal
+              isOpen={isAddSupervisorModalOpen}
+              onClose={() => {
+                setIsAddSupervisorModalOpen(false);
+                setSelectedCourseId(null);
+              }}
+              courseId={selectedCourseId}
+              onSupervisorAdded={fetchCourses}
+            />
+            <AddAssignmentModal
+              isOpen={isAddAssignmentModalOpen}
+              onClose={() => {
+                setIsAddAssignmentModalOpen(false);
+                setSelectedCourseId(null);
+              }}
+              courseId={selectedCourseId}
+              onAssignmentAdded={fetchCourses}
+            />
+          </>
         )}
       </div>
     </div>

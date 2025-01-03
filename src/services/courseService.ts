@@ -359,4 +359,15 @@ export const courseService = {
       throw new Error("Failed to add assignments");
     }
   },
+
+  createAssignment: async (courseId: string, title: string): Promise<any> => {
+    const response = await axios.post(
+      `${API_URL}/api/courses/${courseId}/assignments`,
+      { title },
+      {
+        headers: getAuthHeader(),
+      }
+    );
+    return response.data;
+  },
 };

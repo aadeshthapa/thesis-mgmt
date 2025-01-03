@@ -53,30 +53,25 @@ const upload = multer({
 
 // Create assignments for a course (admin only)
 router.post(
-  "/course/:courseId",
+  "/:courseId",
   authenticateToken,
   authorizeRoles("ADMIN"),
   async (req: AuthRequest, res) => {
     try {
       const { courseId } = req.params;
-      const { assignments } = req.body;
+      const { title } = req.body;
 
-      // Create all three assignments
-      const createdAssignments = await prisma.$transaction(
-        assignments.map((title: string) =>
-          prisma.assignment.create({
-            data: {
-              title,
-              courseId,
-            },
-          })
-        )
-      );
+      const assignment = await prisma.assignment.create({
+        data: {
+          title,
+          courseId,
+        },
+      });
 
-      res.status(201).json(createdAssignments);
+      res.status(201).json(assignment);
     } catch (error) {
-      console.error("Error creating assignments:", error);
-      res.status(500).json({ message: "Failed to create assignments" });
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ message: "Failed to create assignment" });
     }
   }
 );

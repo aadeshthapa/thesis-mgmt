@@ -200,7 +200,9 @@ router.get(
       const userId = req.user!.userId;
 
       // Verify user is a supervisor for this course
-      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+      const supervisorCourse = await (
+        prisma as any
+      ).supervisorCourse.findUnique({
         where: {
           supervisorId_courseId: {
             supervisorId: userId,
@@ -216,7 +218,7 @@ router.get(
       }
 
       // Get assignments with submissions
-      const assignments = await prisma.assignment.findMany({
+      const assignments = await (prisma as any).assignment.findMany({
         where: {
           courseId,
         },
@@ -238,6 +240,31 @@ router.get(
     } catch (error) {
       console.error("Error fetching assignments with submissions:", error);
       res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  }
+);
+
+// Create an assignment for a course
+router.post(
+  "/:courseId/assignments",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const { title } = req.body;
+
+      const assignment = await (prisma as any).assignment.create({
+        data: {
+          title,
+          courseId,
+        },
+      });
+
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ message: "Failed to create assignment" });
     }
   }
 );
