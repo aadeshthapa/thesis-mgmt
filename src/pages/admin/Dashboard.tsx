@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
 import { courseService } from "../../services/courseService";
-import { supervisorService } from "../../services/supervisorService";
+import { adminService } from "../../services/adminService";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -31,11 +31,11 @@ const AdminDashboard: React.FC = () => {
     const fetchUserCounts = async () => {
       try {
         const [students, supervisors] = await Promise.all([
-          supervisorService.getTotalStudents(),
-          supervisorService.getTotalSupervisors(),
+          adminService.getAllStudents(),
+          adminService.getAllSupervisors(),
         ]);
-        setTotalStudents(students);
-        setTotalSupervisors(supervisors);
+        setTotalStudents(students.length);
+        setTotalSupervisors(supervisors.length);
       } catch (error) {
         console.error("Error fetching user counts:", error);
       }
