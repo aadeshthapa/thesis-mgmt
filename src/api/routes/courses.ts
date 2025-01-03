@@ -33,6 +33,23 @@ router.get("/enrolled", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+// Get supervisor's courses
+router.get(
+  "/supervisor/courses",
+  authenticateToken,
+  authorizeRoles("SUPERVISOR"),
+  async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.userId;
+      const courses = await courseService.getSupervisorCourses(userId);
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching supervisor courses:", error);
+      res.status(500).json({ message: "Failed to fetch supervisor courses" });
+    }
+  }
+);
+
 // Create a new course (admin only)
 router.post(
   "/",

@@ -357,6 +357,58 @@ class CourseService {
       throw error;
     }
   }
+
+  async getSupervisorCourses(
+    supervisorId: string
+  ): Promise<CourseWithDetails[]> {
+    try {
+      const courses = await (prisma as any).course.findMany({
+        where: {
+          supervisors: {
+            some: {
+              supervisorId,
+            },
+          },
+        },
+        include: {
+          supervisors: {
+            include: {
+              supervisor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              enrollments: true,
+            },
+          },
+        },
+      });
+
+      return courses.map((course: any) => ({
+        id: course.id,
+        code: course.code,
+        name: course.name,
+        category: course.category,
+        supervisors: course.supervisors.map((s: SupervisorWithDetails) => ({
+          id: s.supervisor.id,
+          firstName: s.supervisor.firstName,
+          lastName: s.supervisor.lastName,
+        })),
+        enrolledCount: course._count.enrollments,
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+      }));
+    } catch (error) {
+      console.error("Error in getSupervisorCourses:", error);
+      throw error;
+    }
+  }
 }
 
 export const courseService = new CourseService();

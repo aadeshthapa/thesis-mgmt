@@ -2,9 +2,27 @@ import React from "react";
 import { Link } from "react-router-dom";
 import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
+import { courseService } from "../../services/courseService";
 
 const SupervisorDashboard: React.FC = () => {
   const { user } = useAuth();
+  const [courseCount, setCourseCount] = React.useState<number>(0);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const courses = await courseService.getSupervisorCourses();
+        setCourseCount(courses.length);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,14 +62,14 @@ const SupervisorDashboard: React.FC = () => {
                     </div>
                     <div className="ml-5">
                       <h2 className="text-lg font-medium text-gray-900">
-                        Assign Courses
+                        Assigned Courses
                       </h2>
                       <div className="mt-1">
                         <span className="text-2xl font-semibold text-purple-600">
-                          10
+                          {loading ? "..." : courseCount}
                         </span>
                         <span className="ml-2 text-sm text-gray-500">
-                          Courses
+                          {courseCount === 1 ? "Course" : "Courses"}
                         </span>
                       </div>
                     </div>

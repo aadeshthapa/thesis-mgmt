@@ -228,34 +228,30 @@ export const courseService = {
   // Supervisor Methods
   getSupervisorCourses: async (): Promise<Course[]> => {
     try {
-      if (!API_URL) {
-        throw new Error("API URL is not configured");
-      }
-
-      const headers = getAuthHeader();
-      if (!headers.Authorization) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await axios.get(`${API_URL}/api/supervisor/courses`, {
-        headers,
-      });
-
-      return response.data;
+      const response = await axios.get(
+        `${API_URL}/api/courses/supervisor/courses`,
+        {
+          headers: getAuthHeader(),
+        }
+      );
+      return response.data.map((course: any) => ({
+        id: course.id,
+        code: course.code,
+        name: course.name,
+        category: course.category,
+        enrolledCount: course._count?.enrollments || 0,
+        supervisors: course.supervisors || [],
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+      }));
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        if (axiosError.response?.status === 404) {
-          return [];
-        }
-        if (axiosError.response?.status === 401) {
+        if (error.response?.status === 401) {
           throw new Error("Your session has expired. Please login again.");
         }
-        console.error("API Error:", {
-          status: axiosError.response?.status,
-          data: axiosError.response?.data,
-          headers: axiosError.response?.headers,
-        });
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch courses"
+        );
       }
       throw error;
     }
@@ -276,10 +272,10 @@ export const courseService = {
     try {
       console.log(
         "Searching students with URL:",
-        `${API_URL}/api/admin/students/search?q=${encodeURIComponent(query)}`
+        `${API_URL}/api/students/search?q=${encodeURIComponent(query)}`
       );
       const response = await axios.get(
-        `${API_URL}/api/admin/students/search?q=${encodeURIComponent(query)}`,
+        `${API_URL}/api/students/search?q=${encodeURIComponent(query)}`,
         {
           headers: getAuthHeader(),
         }
