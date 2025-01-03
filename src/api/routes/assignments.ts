@@ -200,4 +200,161 @@ router.get(
   }
 );
 
+// Get assignments for review (supervisor only)
+router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+
+    // Verify user is a supervisor
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { supervisorProfile: true },
+    });
+
+    if (!user || !user.supervisorProfile) {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Supervisor only." });
+    }
+
+    // Get courses where user is supervisor
+    const supervisorCourses = await prisma.supervisorCourse.findMany({
+      where: { supervisorId: userId },
+      select: { courseId: true },
+    });
+
+    const courseIds = supervisorCourses.map((sc) => sc.courseId);
+
+    // Get pending reviews
+    const pending = await prisma.assignmentSubmission.findMany({
+      where: {
+        status: "SUBMITTED",
+        assignment: {
+          courseId: {
+            in: courseIds,
+          },
+        },
+      },
+      include: {
+        assignment: {
+          include: {
+            course: {
+              select: {
+                name: true,
+                code: true,
+              },
+            },
+          },
+        },
+        student: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    // Get completed reviews
+    const completed = await prisma.assignmentSubmission.findMany({
+      where: {
+        status: "GRADED",
+        assignment: {
+          courseId: {
+            in: courseIds,
+          },
+        },
+      },
+      include: {
+        assignment: {
+          include: {
+            course: {
+              select: {
+                name: true,
+                code: true,
+              },
+            },
+          },
+        },
+        student: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    res.json({ pending, completed });
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    res.status(500).json({ message: "Failed to fetch reviews" });
+  }
+});
+
+// Submit grade for an assignment
+router.post(
+  "/submissions/:submissionId/grade",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { submissionId } = req.params;
+      const { grade, feedback } = req.body;
+      const userId = req.user!.userId;
+
+      if (typeof grade !== "number" || grade < 0 || grade > 100) {
+        return res
+          .status(400)
+          .json({ message: "Invalid grade. Must be between 0 and 100." });
+      }
+
+      // Verify user is a supervisor and has access to this submission
+      const submission = await prisma.assignmentSubmission.findUnique({
+        where: { id: submissionId },
+        include: {
+          assignment: {
+            include: {
+              course: true,
+            },
+          },
+        },
+      });
+
+      if (!submission) {
+        return res.status(404).json({ message: "Submission not found" });
+      }
+
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId: submission.assignment.courseId,
+          },
+        },
+      });
+
+      if (!supervisorCourse) {
+        return res.status(403).json({
+          message: "Access denied. Not authorized to grade this submission.",
+        });
+      }
+
+      // Update the submission with grade and feedback
+      const updatedSubmission = await prisma.assignmentSubmission.update({
+        where: { id: submissionId },
+        data: {
+          grade,
+          feedback,
+          status: "GRADED",
+        },
+      });
+
+      res.json(updatedSubmission);
+    } catch (error) {
+      console.error("Error submitting grade:", error);
+      res.status(500).json({ message: "Failed to submit grade" });
+    }
+  }
+);
+
 export default router;

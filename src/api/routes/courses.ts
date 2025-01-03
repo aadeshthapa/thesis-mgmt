@@ -5,8 +5,10 @@ import {
   AuthRequest,
 } from "../middleware/auth";
 import { courseService } from "../../services/backend/courseService";
+import { PrismaClient } from "@prisma/client";
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all courses (accessible by all authenticated users)
 router.get("/", authenticateToken, async (req: AuthRequest, res) => {
@@ -187,5 +189,57 @@ router.get("/:courseId", authenticateToken, async (req: AuthRequest, res) => {
     res.status(500).json({ message: "Failed to fetch course" });
   }
 });
+
+// Get assignments with submissions for a course (supervisor only)
+router.get(
+  "/:courseId/assignments/submissions",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user!.userId;
+
+      // Verify user is a supervisor for this course
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId,
+          },
+        },
+      });
+
+      if (!supervisorCourse) {
+        return res.status(403).json({
+          message: "Not authorized to view this course's assignments",
+        });
+      }
+
+      // Get assignments with submissions
+      const assignments = await prisma.assignment.findMany({
+        where: {
+          courseId,
+        },
+        include: {
+          submissions: {
+            include: {
+              student: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments with submissions:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  }
+);
 
 export default router;

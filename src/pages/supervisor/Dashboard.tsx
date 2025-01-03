@@ -40,7 +40,7 @@ const SupervisorDashboard: React.FC = () => {
         </div>
 
         <div className="mt-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <Link to="/supervisor/courses" className="block">
                 <div className="p-6">
@@ -79,6 +79,38 @@ const SupervisorDashboard: React.FC = () => {
             </div>
 
             <div className="bg-white overflow-hidden shadow rounded-lg">
+              <Link to="/supervisor/assignment-reviews" className="block">
+                <div className="p-6">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                      <svg
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-5">
+                      <h2 className="text-lg font-medium text-gray-900">
+                        Assignment Reviews
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Review and grade student assignments
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
@@ -98,51 +130,11 @@ const SupervisorDashboard: React.FC = () => {
                   </div>
                   <div className="ml-5">
                     <h2 className="text-lg font-medium text-gray-900">
-                      Pending Reviews
+                      Thesis Reviews
                     </h2>
-                    <div className="mt-1">
-                      <span className="text-2xl font-semibold text-blue-600">
-                        5
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">
-                        submissions
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                    <svg
-                      className="h-6 w-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      Completed Reviews
-                    </h2>
-                    <div className="mt-1">
-                      <span className="text-2xl font-semibold text-green-600">
-                        12
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500">
-                        submissions
-                      </span>
-                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Review student thesis submissions
+                    </p>
                   </div>
                 </div>
               </div>

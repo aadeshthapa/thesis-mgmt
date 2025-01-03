@@ -12,6 +12,7 @@ import ThesisSubmission from "./pages/student/ThesisSubmission.js";
 import SupervisorDashboard from "./pages/supervisor/Dashboard.js";
 import CoursesList from "./pages/supervisor/CoursesList.js";
 import CourseStudents from "./pages/supervisor/CourseStudents.js";
+import AssignmentReviews from "./pages/supervisor/AssignmentReviews.js";
 import AdminDashboard from "./pages/admin/Dashboard.js";
 import AdminCoursesList from "./pages/admin/CoursesList.js";
 import AdminCourseStudents from "./pages/admin/CourseStudents.js";
@@ -25,6 +26,7 @@ import Profile from "./pages/student/Profile.js";
 import Submissions from "./pages/student/Submissions.js";
 import { StudentDashboard } from "./pages/student/Dashboard.js";
 import CourseAssignments from "./pages/student/CourseAssignments.js";
+import CourseAssignmentSubmissions from "./pages/supervisor/CourseAssignmentSubmissions";
 
 const App: React.FC = () => {
   return (
@@ -72,6 +74,14 @@ const App: React.FC = () => {
               path="/supervisor/courses/:courseId/students"
               element={<CourseStudents />}
             />
+            <Route
+              path="/supervisor/courses/:courseId/assignments"
+              element={<CourseAssignmentSubmissions />}
+            />
+            <Route
+              path="/supervisor/assignment-reviews"
+              element={<AssignmentReviews />}
+            />
 
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -81,6 +91,10 @@ const App: React.FC = () => {
             <Route
               path="/admin/courses/:courseId/students"
               element={<AdminCourseStudents />}
+            />
+            <Route
+              path="/admin/courses/:courseId/assignments"
+              element={<CourseAssignmentSubmissions />}
             />
           </Routes>
         </div>
