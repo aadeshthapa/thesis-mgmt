@@ -35,7 +35,13 @@ class CourseService {
         include: {
           supervisors: {
             include: {
-              supervisor: true,
+              supervisor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
             },
           },
           _count: {
@@ -70,35 +76,23 @@ class CourseService {
         }
 
         console.log("Processing course ID:", course.id);
-        console.log("Course structure:", {
-          id: course.id,
-          code: course.code,
-          name: course.name,
-          category: course.category,
-          supervisorsCount: course.supervisors?.length,
-          enrollmentsCount: course._count?.enrollments,
-        });
+        console.log(
+          "Course supervisors raw:",
+          JSON.stringify(course.supervisors, null, 2)
+        );
 
-        const supervisors = Array.isArray(course.supervisors)
-          ? course.supervisors
-              .filter((s: SupervisorWithDetails) => {
-                const isValid = s && s.supervisor;
-                if (!isValid) {
-                  console.error("Invalid supervisor entry:", s);
-                }
-                return isValid;
-              })
-              .map((s: SupervisorWithDetails) => {
-                console.log("Processing supervisor:", s.supervisor);
-                return {
-                  id: s.supervisor.id,
-                  firstName: s.supervisor.firstName,
-                  lastName: s.supervisor.lastName,
-                };
-              })
-          : [];
+        const supervisors = course.supervisors
+          .filter((s: any) => s && s.supervisor)
+          .map((s: any) => ({
+            id: s.supervisor.id,
+            firstName: s.supervisor.firstName,
+            lastName: s.supervisor.lastName,
+          }));
 
-        console.log("Processed supervisors:", supervisors);
+        console.log(
+          "Processed supervisors:",
+          JSON.stringify(supervisors, null, 2)
+        );
 
         const result = {
           id: course.id,
@@ -111,7 +105,7 @@ class CourseService {
           updatedAt: course.updatedAt,
         };
 
-        console.log("Transformed course:", result);
+        console.log("Transformed course:", JSON.stringify(result, null, 2));
         return result;
       });
 
@@ -257,6 +251,57 @@ class CourseService {
       }));
     } catch (error) {
       console.error("Error in getStudentCourses:", error);
+      throw error;
+    }
+  }
+
+  async assignSupervisor(courseId: string, supervisorId: string) {
+    try {
+      // First check if the supervisor is already assigned
+      const existingSupervisor = await (
+        prisma as any
+      ).supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId,
+            courseId,
+          },
+        },
+        include: {
+          supervisor: true,
+        },
+      });
+
+      if (existingSupervisor) {
+        throw new Error(
+          `${existingSupervisor.supervisor.firstName} ${existingSupervisor.supervisor.lastName} is already assigned to this course`
+        );
+      }
+
+      return await (prisma as any).supervisorCourse.create({
+        data: {
+          supervisorId,
+          courseId,
+        },
+      });
+    } catch (error) {
+      console.error("Error in assignSupervisor:", error);
+      throw error;
+    }
+  }
+
+  async removeSupervisor(courseId: string, supervisorId: string) {
+    try {
+      return await (prisma as any).supervisorCourse.delete({
+        where: {
+          supervisorId_courseId: {
+            supervisorId,
+            courseId,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error in removeSupervisor:", error);
       throw error;
     }
   }

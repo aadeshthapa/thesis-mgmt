@@ -120,4 +120,43 @@ router.delete(
   }
 );
 
+// Add supervisor to course (admin only)
+router.post(
+  "/:courseId/supervisors",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const { supervisorId } = req.body;
+      await courseService.assignSupervisor(courseId, supervisorId);
+      res.status(201).json({ message: "Supervisor assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning supervisor:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to assign supervisor" });
+      }
+    }
+  }
+);
+
+// Remove supervisor from course (admin only)
+router.delete(
+  "/:courseId/supervisors/:supervisorId",
+  authenticateToken,
+  authorizeRoles("ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId, supervisorId } = req.params;
+      await courseService.removeSupervisor(courseId, supervisorId);
+      res.json({ message: "Supervisor removed successfully" });
+    } catch (error) {
+      console.error("Error removing supervisor:", error);
+      res.status(500).json({ message: "Failed to remove supervisor" });
+    }
+  }
+);
+
 export default router;

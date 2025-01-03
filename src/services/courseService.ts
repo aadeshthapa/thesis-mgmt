@@ -72,7 +72,7 @@ export const courseService = {
           return true;
         })
         .map((course: any) => {
-          console.log(`Processing course:`, course);
+          console.log(`Processing course:`, JSON.stringify(course, null, 2));
 
           return {
             id: course.id,
@@ -80,13 +80,11 @@ export const courseService = {
             name: course.name || "",
             category: course.category || "",
             supervisors: Array.isArray(course.supervisors)
-              ? course.supervisors
-                  .filter((s: any) => s && s.supervisor)
-                  .map((s: any) => ({
-                    id: s.supervisor.id,
-                    firstName: s.supervisor.firstName || "",
-                    lastName: s.supervisor.lastName || "",
-                  }))
+              ? course.supervisors.map((s: any) => ({
+                  id: s.id,
+                  firstName: s.firstName,
+                  lastName: s.lastName,
+                }))
               : [],
             enrolledCount: course._count?.enrollments || 0,
             createdAt: course.createdAt || new Date().toISOString(),
@@ -94,7 +92,7 @@ export const courseService = {
           };
         });
 
-      console.log("Processed courses:", courses);
+      console.log("Processed courses:", JSON.stringify(courses, null, 2));
       return courses;
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -182,25 +180,42 @@ export const courseService = {
     courseId: string,
     supervisorId: string
   ): Promise<void> => {
-    await axios.post(
-      `${API_URL}/api/admin/courses/${courseId}/supervisors`,
-      { supervisorId },
-      {
-        headers: getAuthHeader(),
+    try {
+      await axios.post(
+        `${API_URL}/api/courses/${courseId}/supervisors`,
+        { supervisorId },
+        {
+          headers: getAuthHeader(),
+        }
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(error.response.data.message);
       }
-    );
+      throw error;
+    }
   },
 
   removeSupervisor: async (
     courseId: string,
     supervisorId: string
   ): Promise<void> => {
-    await axios.delete(
-      `${API_URL}/api/admin/courses/${courseId}/supervisors/${supervisorId}`,
-      {
-        headers: getAuthHeader(),
+    try {
+      const response = await axios.delete(
+        `${API_URL}/api/courses/${courseId}/supervisors/${supervisorId}`,
+        {
+          headers: getAuthHeader(),
+        }
+      );
+      if (response.data && response.data.message) {
+        throw new Error(response.data.message);
       }
-    );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw error;
+    }
   },
 
   searchSupervisors: async (query: string): Promise<Supervisor[]> => {
