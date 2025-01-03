@@ -38,6 +38,7 @@ model User {
   notifications      Notification[]
   enrollments        Enrollment[]
   supervisorCourses  SupervisorCourse[]
+  submissions        AssignmentSubmission[]
 }
 
 model StudentProfile {
@@ -161,6 +162,7 @@ model Course {
   updatedAt   DateTime @updatedAt
   enrollments Enrollment[]
   supervisors SupervisorCourse[]
+  assignments Assignment[]
 }
 
 model Enrollment {
@@ -173,4 +175,40 @@ model Enrollment {
   course    Course   @relation(fields: [courseId], references: [id])
 
   @@unique([userId, courseId])
+}
+
+enum AssignmentStatus {
+  PENDING
+  SUBMITTED
+  GRADED
+}
+
+model Assignment {
+  id          String    @id @default(uuid())
+  title       String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  submissions AssignmentSubmission[]
+
+  @@index([courseId])
+}
+
+model AssignmentSubmission {
+  id            String           @id @default(uuid())
+  assignment    Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  assignmentId  String
+  student       User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId     String
+  fileUrl      String
+  status        AssignmentStatus @default(PENDING)
+  grade         Float?
+  feedback      String?
+  submissionDate DateTime        @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([assignmentId, studentId])
+  @@index([assignmentId])
+  @@index([studentId])
 }
