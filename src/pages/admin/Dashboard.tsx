@@ -4,6 +4,8 @@ import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
 import { courseService } from "../../services/courseService";
 import { adminService } from "../../services/adminService";
+import AddUserModal from "./AddUserModal";
+import { toast } from "react-toastify";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +13,20 @@ const AdminDashboard: React.FC = () => {
   const [totalStudents, setTotalStudents] = React.useState<number>(0);
   const [totalSupervisors, setTotalSupervisors] = React.useState<number>(0);
   const [loading, setLoading] = React.useState(true);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = React.useState(false);
+
+  const fetchUserCounts = async () => {
+    try {
+      const [students, supervisors] = await Promise.all([
+        adminService.getAllStudents(),
+        adminService.getAllSupervisors(),
+      ]);
+      setTotalStudents(students.length);
+      setTotalSupervisors(supervisors.length);
+    } catch (error) {
+      console.error("Error fetching user counts:", error);
+    }
+  };
 
   React.useEffect(() => {
     const fetchCourseCount = async () => {
@@ -28,21 +44,14 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    const fetchUserCounts = async () => {
-      try {
-        const [students, supervisors] = await Promise.all([
-          adminService.getAllStudents(),
-          adminService.getAllSupervisors(),
-        ]);
-        setTotalStudents(students.length);
-        setTotalSupervisors(supervisors.length);
-      } catch (error) {
-        console.error("Error fetching user counts:", error);
-      }
-    };
-
     fetchUserCounts();
   }, []);
+
+  const handleAddUserSuccess = () => {
+    toast.success("User created successfully!");
+    // Refresh the counts
+    fetchUserCounts();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -211,7 +220,10 @@ const AdminDashboard: React.FC = () => {
 
           <div className="mt-8">
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button
+                onClick={() => setIsAddUserModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
                 <svg
                   className="mr-2 h-5 w-5"
                   fill="none"
@@ -247,6 +259,12 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onSuccess={handleAddUserSuccess}
+      />
     </div>
   );
 };
