@@ -159,4 +159,16 @@ router.delete(
   }
 );
 
+// Get a single course
+router.get("/:courseId", authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { courseId } = req.params;
+    const course = await courseService.getCourse(courseId);
+    res.json(course);
+  } catch (error) {
+    console.error("Error fetching course:", error);
+    res.status(500).json({ message: "Failed to fetch course" });
+  }
+});
+
 export default router;

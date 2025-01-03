@@ -201,15 +201,12 @@ export const courseService = {
     supervisorId: string
   ): Promise<void> => {
     try {
-      const response = await axios.delete(
+      await axios.delete(
         `${API_URL}/api/courses/${courseId}/supervisors/${supervisorId}`,
         {
           headers: getAuthHeader(),
         }
       );
-      if (response.data && response.data.message) {
-        throw new Error(response.data.message);
-      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.data?.message) {
         throw new Error(error.response.data.message);
@@ -322,5 +319,28 @@ export const courseService = {
         headers: getAuthHeader(),
       }
     );
+  },
+
+  getCourse: async (courseId: string): Promise<Course> => {
+    const response = await axios.get(`${API_URL}/api/courses/${courseId}`, {
+      headers: getAuthHeader(),
+    });
+    const course = response.data;
+    return {
+      id: course.id,
+      code: course.code || "",
+      name: course.name || "",
+      category: course.category || "",
+      supervisors: Array.isArray(course.supervisors)
+        ? course.supervisors.map((s: any) => ({
+            id: s.supervisor.id,
+            firstName: s.supervisor.firstName,
+            lastName: s.supervisor.lastName,
+          }))
+        : [],
+      enrolledCount: course._count?.enrollments || 0,
+      createdAt: course.createdAt || new Date().toISOString(),
+      updatedAt: course.updatedAt || new Date().toISOString(),
+    };
   },
 };

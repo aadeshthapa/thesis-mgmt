@@ -305,6 +305,58 @@ class CourseService {
       throw error;
     }
   }
+
+  async getCourse(courseId: string): Promise<CourseWithDetails> {
+    try {
+      const course = await (prisma as any).course.findUnique({
+        where: { id: courseId },
+        include: {
+          supervisors: {
+            include: {
+              supervisor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              enrollments: true,
+            },
+          },
+        },
+      });
+
+      if (!course) {
+        throw new Error("Course not found");
+      }
+
+      const supervisors = course.supervisors
+        .filter((s: any) => s && s.supervisor)
+        .map((s: any) => ({
+          id: s.supervisor.id,
+          firstName: s.supervisor.firstName,
+          lastName: s.supervisor.lastName,
+        }));
+
+      return {
+        id: course.id,
+        code: course.code,
+        name: course.name,
+        category: course.category,
+        supervisors,
+        enrolledCount: course._count?.enrollments || 0,
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+      };
+    } catch (error) {
+      console.error("Error in getCourse:", error);
+      throw error;
+    }
+  }
 }
 
 export const courseService = new CourseService();

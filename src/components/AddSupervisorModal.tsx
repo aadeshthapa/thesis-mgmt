@@ -25,7 +25,25 @@ const AddSupervisorModal: React.FC<AddSupervisorModalProps> = ({
     }>
   >([]);
   const [isSearching, setIsSearching] = React.useState(false);
+  const [currentSupervisors, setCurrentSupervisors] = React.useState<
+    Array<{ id: string }>
+  >([]);
   const searchTimeout = React.useRef<NodeJS.Timeout>();
+
+  // Fetch current supervisors when modal opens
+  React.useEffect(() => {
+    if (isOpen && courseId) {
+      const fetchCurrentSupervisors = async () => {
+        try {
+          const course = await courseService.getCourse(courseId);
+          setCurrentSupervisors(course.supervisors);
+        } catch (error) {
+          console.error("Error fetching course supervisors:", error);
+        }
+      };
+      fetchCurrentSupervisors();
+    }
+  }, [isOpen, courseId]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -45,7 +63,12 @@ const AddSupervisorModal: React.FC<AddSupervisorModalProps> = ({
       setIsSearching(true);
       try {
         const results = await courseService.searchSupervisors(query);
-        setSearchResults(results);
+        // Filter out already assigned supervisors
+        const filteredResults = results.filter(
+          (supervisor) =>
+            !currentSupervisors.some((cs) => cs.id === supervisor.id)
+        );
+        setSearchResults(filteredResults);
       } catch (error) {
         console.error("Error searching supervisors:", error);
         toast.error("Failed to search supervisors. Please try again.");
