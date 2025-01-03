@@ -133,11 +133,6 @@ const CoursesList: React.FC = () => {
                             {course.name}
                           </p>
                         </div>
-                        <div className="ml-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            {course.enrolledCount} Students
-                          </span>
-                        </div>
                       </div>
                       <div className="mt-4 flex items-center text-sm text-gray-500">
                         <svg
