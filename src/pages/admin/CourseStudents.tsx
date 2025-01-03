@@ -22,7 +22,9 @@ const CourseStudents: React.FC = () => {
     const fetchEnrolledStudents = async () => {
       if (!courseId) return;
       try {
+        console.log("Fetching enrolled students for course:", courseId);
         const data = await courseService.getCourseStudents(courseId);
+        console.log("Enrolled students data:", data);
         setEnrolledStudents(data);
       } catch (error) {
         console.error("Error fetching enrolled students:", error);
@@ -42,12 +44,15 @@ const CourseStudents: React.FC = () => {
     if (query.length >= 2) {
       setIsSearching(true);
       try {
+        console.log("Searching students with query:", query);
         const results = await courseService.searchStudents(query);
+        console.log("Search results:", results);
         // Filter out already enrolled students
         const filteredResults = results.filter(
           (student) =>
             !enrolledStudents.some((enrolled) => enrolled.id === student.id)
         );
+        console.log("Filtered results:", filteredResults);
         setSearchResults(filteredResults);
       } catch (error) {
         console.error("Error searching students:", error);
