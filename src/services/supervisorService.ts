@@ -1,4 +1,4 @@
-import { PrismaClient, User, Prisma } from "@prisma/client";
+import { PrismaClient, User, Prisma, StudentProfile } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -23,6 +23,10 @@ interface SupervisorWithCourses extends User {
     specialization: string;
   } | null;
   supervisorCourses: SupervisorCourse[];
+}
+
+interface UserWithProfile extends User {
+  studentProfile: StudentProfile | null;
 }
 
 class SupervisorService {
@@ -60,7 +64,7 @@ class SupervisorService {
     });
   }
 
-  async getStudents(searchQuery?: string): Promise<User[]> {
+  async getStudents(searchQuery?: string): Promise<UserWithProfile[]> {
     return prisma.user.findMany({
       where: {
         role: "STUDENT",
@@ -69,6 +73,11 @@ class SupervisorService {
               { firstName: { contains: searchQuery, mode: "insensitive" } },
               { lastName: { contains: searchQuery, mode: "insensitive" } },
               { email: { contains: searchQuery, mode: "insensitive" } },
+              {
+                studentProfile: {
+                  studentId: { contains: searchQuery, mode: "insensitive" },
+                },
+              },
             ]
           : undefined,
       },

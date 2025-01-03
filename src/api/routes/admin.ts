@@ -1,10 +1,15 @@
 import express from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User, StudentProfile } from "@prisma/client";
 import { authenticateToken, authorizeRoles } from "../middleware/auth";
 import bcrypt from "bcrypt";
+import { supervisorService } from "../../services/supervisorService";
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+interface UserWithStudentProfile extends User {
+  studentProfile: StudentProfile | null;
+}
 
 // Log all requests to admin routes
 router.use((req, res, next) => {
@@ -16,6 +21,44 @@ router.use((req, res, next) => {
 // Protect all admin routes
 router.use(authenticateToken);
 router.use(authorizeRoles("ADMIN"));
+
+// Search students endpoint
+router.get("/students/search", async (req, res) => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    console.log("Searching students with query:", query);
+    const students = await supervisorService.getStudents(query);
+    console.log(`Found ${students.length} matching students`);
+
+    // Format the response to match the Student interface expected by the frontend
+    const formattedStudents = students
+      .map((student) => {
+        const studentId = student.studentProfile?.studentId;
+        // Only include students who have a studentId
+        if (!studentId) {
+          return null;
+        }
+        return {
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          studentId: studentId,
+        };
+      })
+      .filter(
+        (student): student is NonNullable<typeof student> => student !== null
+      );
+
+    res.json(formattedStudents);
+  } catch (error) {
+    console.error("Error searching students:", error);
+    res.status(500).json({ message: "Failed to search students" });
+  }
+});
 
 // Create new user
 router.post("/users", async (req, res) => {

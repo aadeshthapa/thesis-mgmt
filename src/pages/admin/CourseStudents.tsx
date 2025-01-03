@@ -59,22 +59,14 @@ const CourseStudents: React.FC = () => {
       try {
         console.log("Searching students with query:", query);
         const results = await courseService.searchStudents(query);
-        console.log("Raw search results:", JSON.stringify(results, null, 2));
+        console.log("Raw search results:", results);
 
-        if (!results || results.length === 0) {
-          setSearchResults([]);
-          return;
-        }
-
-        // Filter out already enrolled students
+        // Always set search results, even if empty
         const filteredResults = results.filter(
           (student) =>
             !enrolledStudents.some((enrolled) => enrolled.id === student.id)
         );
-        console.log(
-          "Filtered results:",
-          JSON.stringify(filteredResults, null, 2)
-        );
+        console.log("Filtered results:", filteredResults);
         setSearchResults(filteredResults);
       } catch (error) {
         console.error("Error searching students:", error);
