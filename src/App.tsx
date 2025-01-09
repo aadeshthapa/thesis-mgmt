@@ -8,7 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 import Landing from "./pages/Landing.js";
 import Login from "./pages/Login.js";
 import About from "./pages/About.js";
-
 import SupervisorDashboard from "./pages/supervisor/Dashboard.js";
 import CoursesList from "./pages/supervisor/CoursesList.js";
 import CourseStudents from "./pages/supervisor/CourseStudents.js";

@@ -446,4 +446,41 @@ router.delete(
   }
 );
 
+// Get all submissions for the current student
+router.get(
+  "/student/submissions",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const userId = req.user!.userId;
+
+      const submissions = await prisma.assignmentSubmission.findMany({
+        where: {
+          studentId: userId,
+        },
+        include: {
+          assignment: {
+            include: {
+              course: {
+                select: {
+                  code: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          submissionDate: "desc",
+        },
+      });
+
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching student submissions:", error);
+      res.status(500).json({ message: "Failed to fetch submissions" });
+    }
+  }
+);
+
 export default router;
