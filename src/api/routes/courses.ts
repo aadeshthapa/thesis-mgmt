@@ -248,11 +248,35 @@ router.get(
 router.post(
   "/:courseId/assignments",
   authenticateToken,
-  authorizeRoles("ADMIN"),
   async (req: AuthRequest, res) => {
     try {
       const { courseId } = req.params;
       const { title } = req.body;
+      const userId = req.user!.userId;
+
+      // Verify user is a supervisor for this course
+      const supervisorCourse = await (
+        prisma as any
+      ).supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId,
+          },
+        },
+      });
+
+      // Check if user is admin
+      const user = await (prisma as any).user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+
+      if (!supervisorCourse && user?.role !== "ADMIN") {
+        return res.status(403).json({
+          message: "Not authorized to create assignments for this course",
+        });
+      }
 
       const assignment = await (prisma as any).assignment.create({
         data: {

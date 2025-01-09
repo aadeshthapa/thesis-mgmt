@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
+import SupervisorAddAssignmentModal from "../../components/SupervisorAddAssignmentModal";
 
 interface Assignment {
   id: string;
@@ -32,53 +33,54 @@ const CourseAssignmentSubmissions: React.FC = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const fetchCourseAndAssignments = async () => {
+    try {
+      // Fetch course details
+      const courseResponse = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}`,
+        {
+          headers: {
+            ...getAuthHeader(),
+          },
+        }
+      );
+
+      if (!courseResponse.ok) {
+        throw new Error("Failed to fetch course details");
+      }
+
+      const courseData = await courseResponse.json();
+      setCourse(courseData);
+
+      // Fetch assignments with submissions
+      const assignmentsResponse = await fetch(
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/courses/${courseId}/assignments/submissions`,
+        {
+          headers: {
+            ...getAuthHeader(),
+          },
+        }
+      );
+
+      if (!assignmentsResponse.ok) {
+        throw new Error("Failed to fetch assignments");
+      }
+
+      const assignmentsData = await assignmentsResponse.json();
+      setAssignments(assignmentsData);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Failed to load course details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCourseAndAssignments = async () => {
-      try {
-        // Fetch course details
-        const courseResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/courses/${courseId}`,
-          {
-            headers: {
-              ...getAuthHeader(),
-            },
-          }
-        );
-
-        if (!courseResponse.ok) {
-          throw new Error("Failed to fetch course details");
-        }
-
-        const courseData = await courseResponse.json();
-        setCourse(courseData);
-
-        // Fetch assignments with submissions
-        const assignmentsResponse = await fetch(
-          `${
-            import.meta.env.VITE_API_URL
-          }/api/courses/${courseId}/assignments/submissions`,
-          {
-            headers: {
-              ...getAuthHeader(),
-            },
-          }
-        );
-
-        if (!assignmentsResponse.ok) {
-          throw new Error("Failed to fetch assignments");
-        }
-
-        const assignmentsData = await assignmentsResponse.json();
-        setAssignments(assignmentsData);
-      } catch (error) {
-        console.error("Error:", error);
-        toast.error("Failed to load course details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCourseAndAssignments();
   }, [courseId, getAuthHeader]);
 
@@ -97,12 +99,20 @@ const CourseAssignmentSubmissions: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             {course?.name} ({course?.code}) - Assignments
           </h1>
-          <Link
-            to="/supervisor/courses"
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Back to Courses
-          </Link>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            >
+              Add Assignment
+            </button>
+            <Link
+              to="/supervisor/courses"
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Back to Courses
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -205,6 +215,13 @@ const CourseAssignmentSubmissions: React.FC = () => {
           ))}
         </div>
       )}
+
+      <SupervisorAddAssignmentModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        courseId={courseId || ""}
+        onAssignmentAdded={fetchCourseAndAssignments}
+      />
     </div>
   );
 };
