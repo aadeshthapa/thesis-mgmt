@@ -6,9 +6,46 @@ import {
 } from "../middleware/auth";
 import { courseService } from "../../services/backend/courseService";
 import { PrismaClient } from "@prisma/client";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = "uploads/assignments";
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [".pdf", ".doc", ".docx"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error("Invalid file type. Only PDF and Word documents are allowed.")
+      );
+    }
+  },
+});
 
 // Get all courses (accessible by all authenticated users)
 router.get("/", authenticateToken, async (_req: AuthRequest, res) => {
@@ -425,6 +462,76 @@ router.delete(
     } catch (error) {
       console.error("Error deleting assignment:", error);
       res.status(500).json({ message: "Failed to delete assignment" });
+    }
+  }
+);
+
+// Submit an assignment
+router.post(
+  "/:courseId/assignments/:assignmentId/submit",
+  authenticateToken,
+  upload.single("file"),
+  async (req: AuthRequest & { file?: Express.Multer.File }, res) => {
+    try {
+      const { courseId, assignmentId } = req.params;
+      const userId = req.user!.userId;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Verify student is enrolled in the course
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId,
+            courseId,
+          },
+        },
+      });
+
+      if (!enrollment) {
+        return res.status(403).json({ message: "Not enrolled in this course" });
+      }
+
+      // Verify assignment exists and belongs to the course
+      const assignment = await prisma.assignment.findFirst({
+        where: {
+          id: assignmentId,
+          courseId,
+        },
+      });
+
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      // Create or update submission
+      const submission = await prisma.assignmentSubmission.upsert({
+        where: {
+          assignmentId_studentId: {
+            assignmentId,
+            studentId: userId,
+          },
+        },
+        update: {
+          fileUrl: file.path,
+          status: "SUBMITTED",
+          submissionDate: new Date(),
+        },
+        create: {
+          assignmentId,
+          studentId: userId,
+          fileUrl: file.path,
+          status: "SUBMITTED",
+        },
+      });
+
+      res.json(submission);
+    } catch (error) {
+      console.error("Error submitting assignment:", error);
+      res.status(500).json({ message: "Failed to submit assignment" });
     }
   }
 );

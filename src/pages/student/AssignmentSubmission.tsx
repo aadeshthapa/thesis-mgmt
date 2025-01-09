@@ -54,7 +54,7 @@ const AssignmentSubmission: React.FC = () => {
       const response = await fetch(
         `${
           import.meta.env.VITE_API_URL
-        }/api/assignments/${assignmentId}/submit`,
+        }/api/courses/${courseId}/assignments/${assignmentId}/submit`,
         {
           method: "POST",
           headers: {
@@ -65,7 +65,8 @@ const AssignmentSubmission: React.FC = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to submit assignment");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to submit assignment");
       }
 
       toast.success("Assignment submitted successfully");
