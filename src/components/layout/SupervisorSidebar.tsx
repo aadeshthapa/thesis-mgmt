@@ -1,10 +1,16 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const SupervisorSidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const isActivePath = (path: string) => {
     return location.pathname.startsWith(path);
@@ -115,7 +121,7 @@ const SupervisorSidebar: React.FC = () => {
         {/* Logout Button */}
         <div className="p-4 border-t border-gray-200">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900"
           >
             <svg
