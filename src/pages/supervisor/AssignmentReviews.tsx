@@ -82,7 +82,9 @@ const AssignmentReviews: React.FC = () => {
       }
 
       const response = await fetch(
-        `/api/assignments/submissions/${selectedSubmission.id}/grade`,
+        `${import.meta.env.VITE_API_URL}/api/assignments/submissions/${
+          selectedSubmission.id
+        }/grade`,
         {
           method: "POST",
           headers: {
@@ -97,16 +99,20 @@ const AssignmentReviews: React.FC = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to submit grade");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit grade");
       }
 
       toast.success("Grade submitted successfully");
       setSelectedSubmission(null);
       setGradeInput("");
       setFeedbackInput("");
-      fetchReviews();
+      await fetchReviews();
     } catch (error) {
-      toast.error("Failed to submit grade");
+      console.error("Error grading submission:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit grade"
+      );
     }
   };
 
