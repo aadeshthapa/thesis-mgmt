@@ -40,14 +40,14 @@ const SupervisorDashboard: React.FC = () => {
         </div>
 
         <div className="mt-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white overflow-hidden shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300">
               <Link to="/supervisor/courses" className="block">
-                <div className="p-6">
+                <div className="p-8">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-purple-500 rounded-md p-4">
                       <svg
-                        className="h-6 w-6 text-white"
+                        className="h-8 w-8 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -60,15 +60,15 @@ const SupervisorDashboard: React.FC = () => {
                         />
                       </svg>
                     </div>
-                    <div className="ml-5">
-                      <h2 className="text-lg font-medium text-gray-900">
+                    <div className="ml-6">
+                      <h2 className="text-xl font-medium text-gray-900">
                         Assigned Courses
                       </h2>
-                      <div className="mt-1">
-                        <span className="text-2xl font-semibold text-purple-600">
+                      <div className="mt-2">
+                        <span className="text-3xl font-semibold text-purple-600">
                           {loading ? "..." : courseCount}
                         </span>
-                        <span className="ml-2 text-sm text-gray-500">
+                        <span className="ml-2 text-base text-gray-500">
                           {courseCount === 1 ? "Course" : "Courses"}
                         </span>
                       </div>
@@ -78,13 +78,13 @@ const SupervisorDashboard: React.FC = () => {
               </Link>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="bg-white overflow-hidden shadow-lg rounded-2xl hover:shadow-xl transition-shadow duration-300">
               <Link to="/supervisor/assignment-reviews" className="block">
-                <div className="p-6">
+                <div className="p-8">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-green-500 rounded-md p-4">
                       <svg
-                        className="h-6 w-6 text-white"
+                        className="h-8 w-8 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -97,11 +97,11 @@ const SupervisorDashboard: React.FC = () => {
                         />
                       </svg>
                     </div>
-                    <div className="ml-5">
-                      <h2 className="text-lg font-medium text-gray-900">
+                    <div className="ml-6">
+                      <h2 className="text-xl font-medium text-gray-900">
                         Assignment Reviews
                       </h2>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-2 text-base text-gray-500">
                         Review and grade student assignments
                       </p>
                     </div>
