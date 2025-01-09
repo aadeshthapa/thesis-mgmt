@@ -229,7 +229,7 @@ router.get(
   }
 );
 
-// Get assignments for review (supervisor only)
+// Get pending and completed reviews for supervisor
 router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
@@ -272,6 +272,11 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
             id: true,
             firstName: true,
             lastName: true,
+            studentProfile: {
+              select: {
+                studentId: true,
+              },
+            },
           },
         },
       },
@@ -306,6 +311,11 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
             id: true,
             firstName: true,
             lastName: true,
+            studentProfile: {
+              select: {
+                studentId: true,
+              },
+            },
           },
         },
       },

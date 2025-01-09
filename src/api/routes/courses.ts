@@ -331,6 +331,11 @@ router.get(
                 select: {
                   firstName: true,
                   lastName: true,
+                  studentProfile: {
+                    select: {
+                      studentId: true,
+                    },
+                  },
                 },
               },
             },

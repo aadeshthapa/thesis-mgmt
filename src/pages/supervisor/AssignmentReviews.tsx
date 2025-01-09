@@ -17,6 +17,9 @@ interface AssignmentSubmission {
     firstName: string;
     lastName: string;
     id: string;
+    studentProfile: {
+      studentId: string;
+    };
   };
   fileUrl: string;
   status: "PENDING" | "SUBMITTED" | "GRADED";
@@ -169,7 +172,9 @@ const AssignmentReviews: React.FC = () => {
                       {submission.assignment.course.name}
                     </td>
                     <td className="px-6 py-4">{submission.assignment.title}</td>
-                    <td className="px-6 py-4">{submission.student.id}</td>
+                    <td className="px-6 py-4">
+                      {submission.student.studentProfile?.studentId}
+                    </td>
                     <td className="px-6 py-4">{`${submission.student.firstName} ${submission.student.lastName}`}</td>
                     <td className="px-6 py-4">
                       {new Date(submission.submissionDate).toLocaleDateString()}
@@ -227,6 +232,9 @@ const AssignmentReviews: React.FC = () => {
                     Assignment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Student ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Student
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -244,6 +252,9 @@ const AssignmentReviews: React.FC = () => {
                       {submission.assignment.course.code}
                     </td>
                     <td className="px-6 py-4">{submission.assignment.title}</td>
+                    <td className="px-6 py-4">
+                      {submission.student.studentProfile?.studentId}
+                    </td>
                     <td className="px-6 py-4">{`${submission.student.firstName} ${submission.student.lastName}`}</td>
                     <td className="px-6 py-4">{submission.grade}</td>
                     <td className="px-6 py-4">
