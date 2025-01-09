@@ -76,7 +76,7 @@ router.post(
   }
 );
 
-// Get assignments for a course
+// Get assignments for a course (student view)
 router.get(
   "/course/:courseId",
   authenticateToken,
@@ -85,26 +85,14 @@ router.get(
       const { courseId } = req.params;
       const userId = req.user!.userId;
 
-      // Verify the student is enrolled in the course
-      const enrollment = await prisma.enrollment.findUnique({
-        where: {
-          userId_courseId: {
-            userId,
-            courseId,
-          },
-        },
-      });
-
-      if (!enrollment) {
-        return res.status(403).json({ message: "Not enrolled in this course" });
-      }
-
-      // Get assignments with submission status for the student
+      // Get all assignments for the course
       const assignments = await prisma.assignment.findMany({
         where: {
-          courseId,
+          courseId: courseId,
         },
-        include: {
+        select: {
+          id: true,
+          title: true,
           submissions: {
             where: {
               studentId: userId,
@@ -120,19 +108,16 @@ router.get(
         },
       });
 
-      // Format the response to match the expected interface
-      const formattedAssignments = assignments.map((assignment) => {
-        const submission = assignment.submissions[0];
-        return {
-          id: assignment.id,
-          title: assignment.title,
-          status: submission?.status || "PENDING",
-          grade: submission?.grade,
-          feedback: submission?.feedback,
-          submissionDate: submission?.submissionDate,
-          fileUrl: submission?.fileUrl,
-        };
-      });
+      // Format the response
+      const formattedAssignments = assignments.map((assignment) => ({
+        id: assignment.id,
+        title: assignment.title,
+        status: assignment.submissions[0]?.status || "PENDING",
+        grade: assignment.submissions[0]?.grade,
+        feedback: assignment.submissions[0]?.feedback,
+        submissionDate: assignment.submissions[0]?.submissionDate,
+        fileUrl: assignment.submissions[0]?.fileUrl,
+      }));
 
       res.json(formattedAssignments);
     } catch (error) {

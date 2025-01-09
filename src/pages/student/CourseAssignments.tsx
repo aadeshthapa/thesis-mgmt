@@ -50,7 +50,7 @@ const CourseAssignments: React.FC = () => {
         setCourse(courseData);
 
         const assignmentsResponse = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/assignments`,
+          `${import.meta.env.VITE_API_URL}/api/assignments/course/${courseId}`,
           {
             headers: {
               ...getAuthHeader(),
