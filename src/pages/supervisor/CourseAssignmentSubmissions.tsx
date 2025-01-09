@@ -3,10 +3,12 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import AddAssignmentModal from "../../components/AddAssignmentModal";
+import EditInstructionsModal from "../../components/EditInstructionsModal";
 
 interface Assignment {
   id: string;
   title: string;
+  instructions: string;
   submissions: {
     id: string;
     student: {
@@ -44,6 +46,19 @@ const CourseAssignmentSubmissions: React.FC = () => {
     isOpen: false,
     assignmentId: null,
     title: "",
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
+  const [newAssignmentInstructions, setNewAssignmentInstructions] =
+    useState("");
+  const [editInstructionsModal, setEditInstructionsModal] = useState<{
+    isOpen: boolean;
+    assignmentId: string;
+    instructions: string;
+  }>({
+    isOpen: false,
+    assignmentId: "",
+    instructions: "",
   });
 
   const fetchCourseAndAssignments = async () => {
@@ -187,6 +202,38 @@ const CourseAssignmentSubmissions: React.FC = () => {
     }
   };
 
+  const handleCreateAssignment = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/assignments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({
+            title: newAssignmentTitle,
+            instructions: newAssignmentInstructions,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to create assignment");
+      }
+
+      toast.success("Assignment created successfully");
+      setIsModalOpen(false);
+      setNewAssignmentTitle("");
+      setNewAssignmentInstructions("");
+      fetchCourseAndAssignments();
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      toast.error("Failed to create assignment");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -219,35 +266,30 @@ const CourseAssignmentSubmissions: React.FC = () => {
         </div>
       </div>
 
-      {assignments.length === 0 ? (
-        <div className="text-center text-gray-500 bg-white rounded-lg shadow p-6">
-          No assignments found for this course
-        </div>
-      ) : (
-        <div className="space-y-4">
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
           {assignments.map((assignment) => (
-            <div
-              key={assignment.id}
-              className="bg-white shadow-sm border border-gray-200 rounded-lg"
-            >
-              <div className="px-4 py-3 flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {assignment.title}
-                </h3>
-                <button
-                  onClick={() =>
-                    handleDeleteClick(assignment.id, assignment.title)
-                  }
-                  disabled={isDeleting[assignment.id]}
-                  className={`text-red-600 hover:text-red-800 ${
-                    isDeleting[assignment.id]
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
-                >
-                  {isDeleting[assignment.id] ? (
-                    <span>Deleting...</span>
-                  ) : (
+            <li key={assignment.id} className="px-4 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {assignment.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {assignment.submissions.length} submissions
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() =>
+                      setEditInstructionsModal({
+                        isOpen: true,
+                        assignmentId: assignment.id,
+                        instructions: assignment.instructions || "",
+                      })
+                    }
+                    className="text-blue-600 hover:text-blue-800"
+                  >
                     <span className="flex items-center">
                       <svg
                         className="h-5 w-5 mr-1"
@@ -259,56 +301,83 @@ const CourseAssignmentSubmissions: React.FC = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
-                      Delete
+                      Edit Instructions
                     </span>
-                  )}
-                </button>
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleDeleteClick(assignment.id, assignment.title)
+                    }
+                    disabled={isDeleting[assignment.id]}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    {isDeleting[assignment.id] ? (
+                      <span>Deleting...</span>
+                    ) : (
+                      <span className="flex items-center">
+                        <svg
+                          className="h-5 w-5 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Delete
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
-      )}
+        </ul>
+      </div>
 
       <AddAssignmentModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        courseId={courseId || ""}
+        courseId={courseId!}
         onAssignmentAdded={fetchCourseAndAssignments}
       />
 
-      {/* Delete Confirmation Modal */}
+      <EditInstructionsModal
+        isOpen={editInstructionsModal.isOpen}
+        onClose={() =>
+          setEditInstructionsModal({
+            isOpen: false,
+            assignmentId: "",
+            instructions: "",
+          })
+        }
+        courseId={courseId!}
+        assignmentId={editInstructionsModal.assignmentId}
+        currentInstructions={editInstructionsModal.instructions}
+        onInstructionsUpdated={fetchCourseAndAssignments}
+      />
+
       {deleteConfirmation.isOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3 text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <svg
-                  className="h-6 w-6 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
                 Delete Assignment
               </h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500">
                   Are you sure you want to delete "{deleteConfirmation.title}"?
-                  This will also delete all student submissions.
+                  This action cannot be undone.
                 </p>
               </div>
-              <div className="flex justify-end space-x-3 px-4 py-3">
+              <div className="flex justify-center space-x-4 mt-4">
                 <button
                   onClick={() =>
                     setDeleteConfirmation({

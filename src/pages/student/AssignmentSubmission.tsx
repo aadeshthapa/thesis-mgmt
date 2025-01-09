@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
@@ -12,6 +12,40 @@ const AssignmentSubmission: React.FC = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [assignment, setAssignment] = useState<{
+    title: string;
+    instructions: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Fetch assignment details including instructions
+    const fetchAssignment = async () => {
+      try {
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_API_URL
+          }/api/courses/${courseId}/assignments/${assignmentId}`,
+          {
+            headers: {
+              ...getAuthHeader(),
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch assignment details");
+        }
+
+        const data = await response.json();
+        setAssignment(data);
+      } catch (error) {
+        console.error("Error fetching assignment:", error);
+        toast.error("Failed to load assignment details");
+      }
+    };
+
+    fetchAssignment();
+  }, [assignmentId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -84,9 +118,19 @@ const AssignmentSubmission: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
-          Submit Assignment
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Submit Assignment: {assignment?.title}
         </h1>
+
+        {assignment?.instructions && (
+          <div className="mb-8 bg-gray-50 p-4 rounded-lg">
+            <h2 className="text-lg font-semibold mb-2">Instructions</h2>
+            <p className="text-gray-700 whitespace-pre-wrap">
+              {assignment.instructions}
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">

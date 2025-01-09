@@ -1,70 +1,65 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
 
-interface AddAssignmentModalProps {
+interface EditInstructionsModalProps {
   isOpen: boolean;
   onClose: () => void;
   courseId: string;
-  onAssignmentAdded: () => void;
+  assignmentId: string;
+  currentInstructions: string;
+  onInstructionsUpdated: () => void;
 }
 
-const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
+const EditInstructionsModal: React.FC<EditInstructionsModalProps> = ({
   isOpen,
   onClose,
   courseId,
-  onAssignmentAdded,
+  assignmentId,
+  currentInstructions,
+  onInstructionsUpdated,
 }) => {
-  const [title, setTitle] = useState("");
-  const [instructions, setInstructions] = useState("");
+  const [instructions, setInstructions] = useState(currentInstructions);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { getAuthHeader, user } = useAuth();
+  const { getAuthHeader } = useAuth();
+
+  useEffect(() => {
+    setInstructions(currentInstructions);
+  }, [currentInstructions]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast.error("Please enter an assignment title");
-      return;
-    }
-
     setIsSubmitting(true);
-    try {
-      const headers = getAuthHeader();
-      console.log("Making request with headers:", headers);
-      console.log("Current user:", user);
 
+    try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/assignments`,
+        `${
+          import.meta.env.VITE_API_URL
+        }/api/courses/${courseId}/assignments/${assignmentId}`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            ...headers,
+            ...getAuthHeader(),
           },
           body: JSON.stringify({
-            title: title.trim(),
             instructions: instructions.trim(),
           }),
         }
       );
 
-      const data = await response.json();
-
       if (!response.ok) {
-        console.error("Error response:", data);
-        throw new Error(data.message || "Failed to create assignment");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update instructions");
       }
 
-      console.log("Assignment created:", data);
-      toast.success("Assignment created successfully");
-      onAssignmentAdded();
-      setTitle("");
-      setInstructions("");
+      toast.success("Instructions updated successfully");
+      onInstructionsUpdated();
       onClose();
     } catch (error) {
-      console.error("Error creating assignment:", error);
+      console.error("Error updating instructions:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to create assignment"
+        error instanceof Error ? error.message : "Failed to update instructions"
       );
     } finally {
       setIsSubmitting(false);
@@ -75,10 +70,10 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-900">
-            Add Assignment
+            Edit Assignment Instructions
           </h3>
           <button
             onClick={onClose}
@@ -103,24 +98,6 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Assignment Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="e.g., Project Proposal"
-              required
-            />
-          </div>
-
-          <div>
-            <label
               htmlFor="instructions"
               className="block text-sm font-medium text-gray-700"
             >
@@ -132,7 +109,7 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
               onChange={(e) => setInstructions(e.target.value)}
               className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               placeholder="Enter assignment instructions..."
-              rows={4}
+              rows={8}
             />
           </div>
 
@@ -149,7 +126,7 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSubmitting ? "Creating..." : "Create Assignment"}
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
@@ -158,4 +135,4 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
   );
 };
 
-export default AddAssignmentModal;
+export default EditInstructionsModal;

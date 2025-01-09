@@ -354,13 +354,14 @@ router.post(
   async (req: AuthRequest, res) => {
     try {
       const { courseId } = req.params;
-      const { title } = req.body;
+      const { title, instructions } = req.body;
       const userId = req.user!.userId;
 
       console.log("Creating assignment:", {
         userId,
         courseId,
         title,
+        instructions,
         userRole: req.user?.role,
       });
 
@@ -399,6 +400,7 @@ router.post(
       const assignment = await prisma.assignment.create({
         data: {
           title,
+          instructions,
           courseId,
         },
       });
@@ -532,6 +534,128 @@ router.post(
     } catch (error) {
       console.error("Error submitting assignment:", error);
       res.status(500).json({ message: "Failed to submit assignment" });
+    }
+  }
+);
+
+// Get a single assignment
+router.get(
+  "/:courseId/assignments/:assignmentId",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId, assignmentId } = req.params;
+      const userId = req.user!.userId;
+
+      // Check if user is a supervisor for this course
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId,
+          },
+        },
+      });
+
+      // If not a supervisor, verify student enrollment
+      if (!supervisorCourse && req.user!.role !== "ADMIN") {
+        const enrollment = await prisma.enrollment.findUnique({
+          where: {
+            userId_courseId: {
+              userId,
+              courseId,
+            },
+          },
+        });
+
+        if (!enrollment) {
+          return res.status(403).json({
+            message: "Not enrolled in this course",
+          });
+        }
+      }
+
+      // Get the assignment with course details
+      const assignment = await prisma.assignment.findFirst({
+        where: {
+          id: assignmentId,
+          courseId: courseId,
+        },
+        include: {
+          course: {
+            select: {
+              name: true,
+              code: true,
+            },
+          },
+        },
+      });
+
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error fetching assignment:", error);
+      res.status(500).json({ message: "Failed to fetch assignment" });
+    }
+  }
+);
+
+// Update assignment instructions
+router.patch(
+  "/:courseId/assignments/:assignmentId",
+  authenticateToken,
+  authorizeRoles("SUPERVISOR", "ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId, assignmentId } = req.params;
+      const { instructions } = req.body;
+      const userId = req.user!.userId;
+
+      // Verify user is a supervisor for this course
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId,
+          },
+        },
+      });
+
+      if (!supervisorCourse && req.user!.role !== "ADMIN") {
+        return res.status(403).json({
+          message: "Not authorized to update assignments in this course",
+        });
+      }
+
+      // Verify the assignment exists and belongs to this course
+      const existingAssignment = await prisma.assignment.findFirst({
+        where: {
+          id: assignmentId,
+          courseId,
+        },
+      });
+
+      if (!existingAssignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+
+      // Update the assignment
+      const assignment = await prisma.assignment.update({
+        where: {
+          id: assignmentId,
+        },
+        data: {
+          instructions: instructions || null, // Convert empty string to null
+        },
+      });
+
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      res.status(500).json({ message: "Failed to update assignment" });
     }
   }
 );
