@@ -234,27 +234,19 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.userId;
 
-    // Verify user is a supervisor
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { supervisorProfile: true },
-    });
-
-    if (!user || !user.supervisorProfile) {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Supervisor only." });
-    }
-
     // Get courses where user is supervisor
     const supervisorCourses = await prisma.supervisorCourse.findMany({
-      where: { supervisorId: userId },
-      select: { courseId: true },
+      where: {
+        supervisorId: userId,
+      },
+      select: {
+        courseId: true,
+      },
     });
 
     const courseIds = supervisorCourses.map((sc) => sc.courseId);
 
-    // Get pending reviews
+    // Get pending submissions
     const pending = await prisma.assignmentSubmission.findMany({
       where: {
         status: "SUBMITTED",
@@ -277,14 +269,18 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
         },
         student: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
           },
         },
       },
+      orderBy: {
+        submissionDate: "desc",
+      },
     });
 
-    // Get completed reviews
+    // Get completed submissions
     const completed = await prisma.assignmentSubmission.findMany({
       where: {
         status: "GRADED",
@@ -307,14 +303,21 @@ router.get("/reviews", authenticateToken, async (req: AuthRequest, res) => {
         },
         student: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
           },
         },
       },
+      orderBy: {
+        submissionDate: "desc",
+      },
     });
 
-    res.json({ pending, completed });
+    res.json({
+      pending,
+      completed,
+    });
   } catch (error) {
     console.error("Error fetching reviews:", error);
     res.status(500).json({ message: "Failed to fetch reviews" });

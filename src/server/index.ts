@@ -6,6 +6,7 @@ import studentRouter from "../api/routes/student";
 import courseRoutes from "../api/routes/courses";
 import adminRouter from "../api/routes/admin";
 import studentsRouter from "../api/routes/students";
+import assignmentsRouter from "../api/routes/assignments";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use("/api/student", studentRouter);
 app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRouter);
 app.use("/api/students", studentsRouter);
+app.use("/api/assignments", assignmentsRouter);
 
 // Error handling middleware
 app.use(

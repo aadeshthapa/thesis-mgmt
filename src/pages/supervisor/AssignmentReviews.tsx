@@ -16,6 +16,7 @@ interface AssignmentSubmission {
   student: {
     firstName: string;
     lastName: string;
+    id: string;
   };
   fileUrl: string;
   status: "PENDING" | "SUBMITTED" | "GRADED";
@@ -45,20 +46,25 @@ const AssignmentReviews: React.FC = () => {
 
   const fetchReviews = async () => {
     try {
-      const response = await fetch("/api/assignments/reviews", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/assignments/reviews`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch reviews");
       }
 
       const data = await response.json();
+      console.log("Reviews data:", data);
       setPendingReviews(data.pending);
       setCompletedReviews(data.completed);
     } catch (error) {
+      console.error("Error:", error);
       toast.error("Failed to load assignment reviews");
     } finally {
       setLoading(false);
@@ -133,10 +139,16 @@ const AssignmentReviews: React.FC = () => {
                     Assignment
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
+                    Student ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Student Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Submitted
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    File
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -147,12 +159,26 @@ const AssignmentReviews: React.FC = () => {
                 {pendingReviews.map((submission) => (
                   <tr key={submission.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {submission.assignment.course.code}
+                      {submission.assignment.course.code} -{" "}
+                      {submission.assignment.course.name}
                     </td>
                     <td className="px-6 py-4">{submission.assignment.title}</td>
+                    <td className="px-6 py-4">{submission.student.id}</td>
                     <td className="px-6 py-4">{`${submission.student.firstName} ${submission.student.lastName}`}</td>
                     <td className="px-6 py-4">
                       {new Date(submission.submissionDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <a
+                        href={`${import.meta.env.VITE_API_URL}/${
+                          submission.fileUrl
+                        }`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Download
+                      </a>
                     </td>
                     <td className="px-6 py-4">
                       <button
