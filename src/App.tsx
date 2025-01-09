@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Landing from "./pages/Landing.js";
 import Login from "./pages/Login.js";
 import About from "./pages/About.js";
-import ThesisSubmission from "./pages/student/ThesisSubmission.js";
+
 import SupervisorDashboard from "./pages/supervisor/Dashboard.js";
 import CoursesList from "./pages/supervisor/CoursesList.js";
 import CourseStudents from "./pages/supervisor/CourseStudents.js";
@@ -57,7 +57,7 @@ const App: React.FC = () => {
             <Route path="/student/*" element={<StudentLayout />}>
               <Route path="dashboard" element={<StudentDashboard />} />
               <Route path="profile" element={<Profile />} />
-              <Route path="submit" element={<ThesisSubmission />} />
+
               <Route path="submissions" element={<Submissions />} />
               <Route
                 path="courses/:courseId/assignments"
