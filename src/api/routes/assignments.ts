@@ -380,4 +380,100 @@ router.post(
   }
 );
 
+// Delete an assignment (supervisor or admin only)
+router.delete(
+  "/:assignmentId",
+  authenticateToken,
+  authorizeRoles("SUPERVISOR", "ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { assignmentId } = req.params;
+      const userId = req.user!.userId;
+
+      console.log("Delete assignment request:", {
+        assignmentId,
+        userId,
+        userRole: req.user?.role,
+      });
+
+      // Get the assignment with course info
+      const assignment = await prisma.assignment.findUnique({
+        where: { id: assignmentId },
+        include: {
+          course: {
+            include: {
+              supervisors: {
+                where: {
+                  supervisorId: userId,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      console.log("Found assignment:", assignment);
+
+      if (!assignment) {
+        console.log("Assignment not found:", assignmentId);
+        return res.status(404).json({
+          message: "Assignment not found",
+        });
+      }
+
+      // If user is not admin, verify they are a supervisor for this course
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+
+      console.log("User role check:", {
+        userId,
+        role: user?.role,
+        isSupervisor: assignment.course.supervisors.length > 0,
+      });
+
+      if (
+        user?.role !== "ADMIN" &&
+        assignment.course.supervisors.length === 0
+      ) {
+        console.log("Authorization failed:", {
+          userId,
+          role: user?.role,
+          supervisorsCount: assignment.course.supervisors.length,
+        });
+        return res.status(403).json({
+          message: "Not authorized to delete this assignment",
+        });
+      }
+
+      // Delete the assignment (this will cascade delete submissions)
+      const deletedAssignment = await prisma.assignment.delete({
+        where: {
+          id: assignmentId,
+        },
+      });
+
+      console.log("Successfully deleted assignment:", deletedAssignment);
+
+      res.json({ message: "Assignment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting assignment:", {
+        error,
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      if (error instanceof Error) {
+        res.status(500).json({
+          message: "Failed to delete assignment",
+          details: error.message,
+        });
+      } else {
+        res.status(500).json({ message: "Failed to delete assignment" });
+      }
+    }
+  }
+);
+
 export default router;

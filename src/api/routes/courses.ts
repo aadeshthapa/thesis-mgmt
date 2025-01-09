@@ -314,4 +314,67 @@ router.post(
   }
 );
 
+// Delete an assignment from a course (supervisor only)
+router.delete(
+  "/:courseId/assignments/:assignmentId",
+  authenticateToken,
+  authorizeRoles("SUPERVISOR", "ADMIN"),
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId, assignmentId } = req.params;
+      const userId = req.user!.userId;
+
+      // If user is admin, skip supervisor check
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+
+      if (user?.role !== "ADMIN") {
+        // Verify user is a supervisor for this course
+        const supervisorCourse = await prisma.supervisorCourse.findUnique({
+          where: {
+            supervisorId_courseId: {
+              supervisorId: userId,
+              courseId,
+            },
+          },
+        });
+
+        if (!supervisorCourse) {
+          return res.status(403).json({
+            message: "Not authorized to delete assignments for this course",
+          });
+        }
+      }
+
+      // Verify assignment belongs to the course
+      const assignment = await prisma.assignment.findFirst({
+        where: {
+          id: assignmentId,
+          courseId,
+        },
+      });
+
+      if (!assignment) {
+        return res.status(404).json({
+          message: "Assignment not found or does not belong to this course",
+        });
+      }
+
+      // Delete the assignment and all related submissions
+      await prisma.assignment.delete({
+        where: {
+          id: assignmentId,
+        },
+      });
+
+      res.json({ message: "Assignment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ message: "Failed to delete assignment" });
+    }
+  }
+);
+
 export default router;
