@@ -27,6 +27,7 @@ import Submissions from "./pages/student/Submissions.js";
 import { StudentDashboard } from "./pages/student/Dashboard.js";
 import CourseAssignments from "./pages/student/CourseAssignments.js";
 import CourseAssignmentSubmissions from "./pages/supervisor/CourseAssignmentSubmissions";
+import AssignmentSubmission from "./pages/student/AssignmentSubmission";
 
 const App: React.FC = () => {
   return (
@@ -61,6 +62,10 @@ const App: React.FC = () => {
               <Route
                 path="courses/:courseId/assignments"
                 element={<CourseAssignments />}
+              />
+              <Route
+                path="courses/:courseId/assignments/:assignmentId/submit"
+                element={<AssignmentSubmission />}
               />
             </Route>
 
