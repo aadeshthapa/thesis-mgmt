@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
-import SupervisorAddAssignmentModal from "../../components/SupervisorAddAssignmentModal";
+import AddAssignmentModal from "../../components/AddAssignmentModal";
 
 interface Assignment {
   id: string;
@@ -29,7 +29,8 @@ interface Course {
 
 const CourseAssignmentSubmissions: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { getAuthHeader } = useAuth();
+  const { getAuthHeader, logout } = useAuth();
+  const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,18 +38,35 @@ const CourseAssignmentSubmissions: React.FC = () => {
 
   const fetchCourseAndAssignments = async () => {
     try {
+      const headers = getAuthHeader();
+
+      // Check if we have a valid auth header
+      if (!("Authorization" in headers)) {
+        toast.error("Authentication token missing. Please log in again.");
+        logout();
+        navigate("/login");
+        return;
+      }
+
       // Fetch course details
       const courseResponse = await fetch(
         `${import.meta.env.VITE_API_URL}/api/courses/${courseId}`,
         {
-          headers: {
-            ...getAuthHeader(),
-          },
+          headers,
         }
       );
 
+      if (courseResponse.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        logout();
+        navigate("/login");
+        return;
+      }
+
       if (!courseResponse.ok) {
-        throw new Error("Failed to fetch course details");
+        throw new Error(
+          `Failed to fetch course details: ${courseResponse.statusText}`
+        );
       }
 
       const courseData = await courseResponse.json();
@@ -60,21 +78,30 @@ const CourseAssignmentSubmissions: React.FC = () => {
           import.meta.env.VITE_API_URL
         }/api/courses/${courseId}/assignments/submissions`,
         {
-          headers: {
-            ...getAuthHeader(),
-          },
+          headers,
         }
       );
 
+      if (assignmentsResponse.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        logout();
+        navigate("/login");
+        return;
+      }
+
       if (!assignmentsResponse.ok) {
-        throw new Error("Failed to fetch assignments");
+        throw new Error(
+          `Failed to fetch assignments: ${assignmentsResponse.statusText}`
+        );
       }
 
       const assignmentsData = await assignmentsResponse.json();
       setAssignments(assignmentsData);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to load course details");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load course details"
+      );
     } finally {
       setLoading(false);
     }
@@ -82,7 +109,7 @@ const CourseAssignmentSubmissions: React.FC = () => {
 
   useEffect(() => {
     fetchCourseAndAssignments();
-  }, [courseId, getAuthHeader]);
+  }, [courseId, getAuthHeader, logout, navigate]);
 
   if (loading) {
     return (
@@ -102,7 +129,7 @@ const CourseAssignmentSubmissions: React.FC = () => {
           <div className="flex space-x-4">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Add Assignment
             </button>
@@ -216,7 +243,7 @@ const CourseAssignmentSubmissions: React.FC = () => {
         </div>
       )}
 
-      <SupervisorAddAssignmentModal
+      <AddAssignmentModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         courseId={courseId || ""}

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import { courseService } from "../services/courseService";
+import { useAuth } from "../contexts/AuthContext";
 
 interface AddAssignmentModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
 }) => {
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { getAuthHeader, user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,19 +28,39 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      console.log("Creating assignment:", { courseId, title });
-      await courseService.createAssignment(courseId, title);
-      toast.success("Assignment added successfully");
+      const headers = getAuthHeader();
+      console.log("Making request with headers:", headers);
+      console.log("Current user:", user);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses/${courseId}/assignments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+          body: JSON.stringify({ title: title.trim() }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error response:", data);
+        throw new Error(data.message || "Failed to create assignment");
+      }
+
+      console.log("Assignment created:", data);
+      toast.success("Assignment created successfully");
       onAssignmentAdded();
       setTitle("");
       onClose();
     } catch (error) {
-      console.error("Error adding assignment:", error);
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Failed to add assignment. Please try again.");
-      }
+      console.error("Error creating assignment:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create assignment"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +127,7 @@ const AddAssignmentModal: React.FC<AddAssignmentModalProps> = ({
               disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSubmitting ? "Adding..." : "Add Assignment"}
+              {isSubmitting ? "Creating..." : "Create Assignment"}
             </button>
           </div>
         </form>

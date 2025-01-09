@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { userService } from "../services/userService";
 import type { User, UserRole } from "@prisma/client";
+import Cookies from "js-cookie";
 
 type AuthUser = Omit<User, "passwordHash"> & {
   studentProfile?: {
@@ -33,6 +34,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_COOKIE_NAME = "auth_token";
+const USER_COOKIE_NAME = "auth_user";
+const COOKIE_EXPIRY = 7; // days
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -41,15 +46,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check for existing session
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-      setIsAuthenticated(true);
+    // Check for existing session from both localStorage and cookies
+    const storedToken = Cookies.get(TOKEN_COOKIE_NAME);
+    const storedUser = Cookies.get(USER_COOKIE_NAME);
+
+    if (storedToken && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setToken(storedToken);
+        setIsAuthenticated(true);
+
+        // Also store in localStorage for backwards compatibility
+        localStorage.setItem("token", storedToken);
+        localStorage.setItem("user", storedUser);
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        clearAuthData();
+      }
     }
   }, []);
+
+  const clearAuthData = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    Cookies.remove(TOKEN_COOKIE_NAME);
+    Cookies.remove(USER_COOKIE_NAME);
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
+  };
 
   const login = async (credentials: { email: string; password: string }) => {
     try {
@@ -70,7 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const errorData = await response.json();
           errorMessage = errorData.message || errorData.error || "Login failed";
         } catch (e) {
-          // If response is not JSON, use status text
           errorMessage = response.statusText || "Login failed";
         }
         throw new Error(errorMessage);
@@ -79,9 +104,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const data = await response.json();
       const { user: userData, token: authToken } = data;
 
-      // Store user and token in localStorage and state
-      localStorage.setItem("user", JSON.stringify(userData));
+      // Store in both cookies and localStorage
+      const userStr = JSON.stringify(userData);
+      Cookies.set(TOKEN_COOKIE_NAME, authToken, {
+        expires: COOKIE_EXPIRY,
+        sameSite: "strict",
+      });
+      Cookies.set(USER_COOKIE_NAME, userStr, {
+        expires: COOKIE_EXPIRY,
+        sameSite: "strict",
+      });
       localStorage.setItem("token", authToken);
+      localStorage.setItem("user", userStr);
+
       setUser(userData);
       setToken(authToken);
       setIsAuthenticated(true);
@@ -94,15 +129,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    setUser(null);
-    setToken(null);
-    setIsAuthenticated(false);
+    clearAuthData();
   };
 
   const getAuthHeader = () => {
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    // Try to get token from state, cookies, or localStorage
+    const authToken =
+      token || Cookies.get(TOKEN_COOKIE_NAME) || localStorage.getItem("token");
+    return authToken ? { Authorization: `Bearer ${authToken}` } : {};
   };
 
   return (

@@ -244,51 +244,72 @@ router.get(
   }
 );
 
-// Create an assignment for a course
+// Create an assignment for a course (supervisor only)
 router.post(
   "/:courseId/assignments",
   authenticateToken,
+  authorizeRoles("SUPERVISOR", "ADMIN"),
   async (req: AuthRequest, res) => {
     try {
       const { courseId } = req.params;
       const { title } = req.body;
       const userId = req.user!.userId;
 
-      // Verify user is a supervisor for this course
-      const supervisorCourse = await (
-        prisma as any
-      ).supervisorCourse.findUnique({
-        where: {
-          supervisorId_courseId: {
-            supervisorId: userId,
-            courseId,
-          },
-        },
+      console.log("Creating assignment:", {
+        userId,
+        courseId,
+        title,
+        userRole: req.user?.role,
       });
 
-      // Check if user is admin
-      const user = await (prisma as any).user.findUnique({
+      // If user is admin, skip supervisor check
+      const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { role: true },
       });
 
-      if (!supervisorCourse && user?.role !== "ADMIN") {
-        return res.status(403).json({
-          message: "Not authorized to create assignments for this course",
+      console.log("Found user:", user);
+
+      if (user?.role !== "ADMIN") {
+        // Verify user is a supervisor for this course
+        const supervisorCourse = await prisma.supervisorCourse.findUnique({
+          where: {
+            supervisorId_courseId: {
+              supervisorId: userId,
+              courseId,
+            },
+          },
         });
+
+        console.log("Found supervisorCourse:", supervisorCourse);
+
+        if (!supervisorCourse) {
+          console.log(
+            "Permission denied: User is not a supervisor for this course"
+          );
+          return res.status(403).json({
+            message: "Not authorized to create assignments for this course",
+          });
+        }
       }
 
-      const assignment = await (prisma as any).assignment.create({
+      // Create the assignment
+      const assignment = await prisma.assignment.create({
         data: {
           title,
           courseId,
         },
       });
 
+      console.log("Created assignment:", assignment);
       res.status(201).json(assignment);
     } catch (error) {
       console.error("Error creating assignment:", error);
-      res.status(500).json({ message: "Failed to create assignment" });
+      if (error instanceof Error) {
+        res.status(500).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to create assignment" });
+      }
     }
   }
 );
