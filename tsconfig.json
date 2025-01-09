@@ -1,24 +1,32 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "jsx": "react-jsx",
-    "useDefineForClassFields": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
+    "allowJs": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "allowJs": true
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "tests", "vite.config.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src",
+    "tests",
+    "vite.config.ts",
+    "jest.config.js",
+    "tailwind.config.js",
+    "postcss.config.js"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }

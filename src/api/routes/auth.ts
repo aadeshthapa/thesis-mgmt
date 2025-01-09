@@ -59,7 +59,7 @@ router.post("/login", loginLimiter, async (req, res) => {
   }
 });
 
-router.post("/logout", (req, res) => {
+router.post("/logout", (_req, res) => {
   // Since we're using JWT, we just send a success response
   // The client will remove the token
   res.json({ message: "Logout successful" });

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 interface AssignmentSubmission {
   id: string;
@@ -34,6 +36,8 @@ const AssignmentReviews: React.FC = () => {
     useState<AssignmentSubmission | null>(null);
   const [gradeInput, setGradeInput] = useState<string>("");
   const [feedbackInput, setFeedbackInput] = useState<string>("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchReviews();

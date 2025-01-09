@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { userService } from "../services/userService";
 import type { User, UserRole } from "@prisma/client";
 import Cookies from "js-cookie";
 

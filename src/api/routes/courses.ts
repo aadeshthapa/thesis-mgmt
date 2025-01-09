@@ -11,7 +11,7 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // Get all courses (accessible by all authenticated users)
-router.get("/", authenticateToken, async (req: AuthRequest, res) => {
+router.get("/", authenticateToken, async (_req: AuthRequest, res) => {
   try {
     const courses = await courseService.getAllCourses();
     res.json(courses);
