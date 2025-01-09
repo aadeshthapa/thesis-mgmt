@@ -72,12 +72,6 @@ const CoursesList: React.FC = () => {
               Manage your assigned courses and assignments
             </p>
           </div>
-          <Link
-            to="/supervisor/dashboard"
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Back to Dashboard
-          </Link>
         </div>
 
         {error ? (

@@ -258,12 +258,6 @@ const CourseAssignmentSubmissions: React.FC = () => {
               >
                 Add Assignment
               </button>
-              <Link
-                to="/supervisor/courses"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Back to Courses
-              </Link>
             </div>
           </div>
         </div>

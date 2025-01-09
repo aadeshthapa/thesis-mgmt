@@ -108,12 +108,6 @@ const CourseStudents: React.FC = () => {
           <h1 className="text-2xl font-semibold text-gray-900">
             Course Students
           </h1>
-          <Link
-            to="/supervisor/courses"
-            className="text-blue-600 hover:text-blue-800"
-          >
-            Back to Courses
-          </Link>
         </div>
 
         {/* Search Section */}
