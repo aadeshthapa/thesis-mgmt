@@ -173,9 +173,17 @@ const AssignmentReviews: React.FC = () => {
                         href={`${import.meta.env.VITE_API_URL}/${
                           submission.fileUrl
                         }`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        download
                         className="text-blue-600 hover:text-blue-900"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open(
+                            `${import.meta.env.VITE_API_URL}/${
+                              submission.fileUrl
+                            }`,
+                            "_blank"
+                          );
+                        }}
                       >
                         Download
                       </a>
