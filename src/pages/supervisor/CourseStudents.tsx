@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { courseService } from "../../services/courseService";
 import { toast } from "react-toastify";
+import SupervisorLayout from "../../components/layout/SupervisorLayout";
 
 interface Student {
   id: string;
@@ -101,8 +102,8 @@ const CourseStudents: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SupervisorLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-semibold text-gray-900">
             Course Students
@@ -203,7 +204,7 @@ const CourseStudents: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </SupervisorLayout>
   );
 };
 

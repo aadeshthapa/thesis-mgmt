@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { courseService } from "../../services/courseService";
 import { toast } from "react-toastify";
+import SupervisorLayout from "../../components/layout/SupervisorLayout";
 
 const CoursesList: React.FC = () => {
   const navigate = useNavigate();
@@ -62,8 +63,8 @@ const CoursesList: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SupervisorLayout>
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center py-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
@@ -181,7 +182,7 @@ const CoursesList: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </SupervisorLayout>
   );
 };
 
