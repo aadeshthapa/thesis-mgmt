@@ -190,6 +190,73 @@ router.get("/:courseId", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+// Get assignments for a course (student view)
+router.get(
+  "/:courseId/assignments",
+  authenticateToken,
+  async (req: AuthRequest, res) => {
+    try {
+      const { courseId } = req.params;
+      const userId = req.user!.userId;
+
+      // Verify student is enrolled in the course
+      const enrollment = await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId,
+            courseId,
+          },
+        },
+      });
+
+      if (!enrollment) {
+        return res.status(403).json({
+          message: "Not enrolled in this course",
+        });
+      }
+
+      // Get all assignments for the course with student's submissions
+      const assignments = await prisma.assignment.findMany({
+        where: {
+          courseId,
+        },
+        select: {
+          id: true,
+          title: true,
+          submissions: {
+            where: {
+              studentId: userId,
+            },
+            select: {
+              status: true,
+              grade: true,
+              feedback: true,
+              submissionDate: true,
+              fileUrl: true,
+            },
+          },
+        },
+      });
+
+      // Format the response
+      const formattedAssignments = assignments.map((assignment) => ({
+        id: assignment.id,
+        title: assignment.title,
+        status: assignment.submissions[0]?.status || "PENDING",
+        grade: assignment.submissions[0]?.grade,
+        feedback: assignment.submissions[0]?.feedback,
+        submissionDate: assignment.submissions[0]?.submissionDate,
+        fileUrl: assignment.submissions[0]?.fileUrl,
+      }));
+
+      res.json(formattedAssignments);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  }
+);
+
 // Get assignments with submissions for a course (supervisor only)
 router.get(
   "/:courseId/assignments/submissions",
@@ -200,9 +267,7 @@ router.get(
       const userId = req.user!.userId;
 
       // Verify user is a supervisor for this course
-      const supervisorCourse = await (
-        prisma as any
-      ).supervisorCourse.findUnique({
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
         where: {
           supervisorId_courseId: {
             supervisorId: userId,
@@ -218,7 +283,7 @@ router.get(
       }
 
       // Get assignments with submissions
-      const assignments = await (prisma as any).assignment.findMany({
+      const assignments = await prisma.assignment.findMany({
         where: {
           courseId,
         },
@@ -318,55 +383,42 @@ router.post(
 router.delete(
   "/:courseId/assignments/:assignmentId",
   authenticateToken,
-  authorizeRoles("SUPERVISOR", "ADMIN"),
   async (req: AuthRequest, res) => {
     try {
       const { courseId, assignmentId } = req.params;
       const userId = req.user!.userId;
 
-      // If user is admin, skip supervisor check
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
+      // Verify user is a supervisor for this course
+      const supervisorCourse = await prisma.supervisorCourse.findUnique({
+        where: {
+          supervisorId_courseId: {
+            supervisorId: userId,
+            courseId,
+          },
+        },
       });
 
-      if (user?.role !== "ADMIN") {
-        // Verify user is a supervisor for this course
-        const supervisorCourse = await prisma.supervisorCourse.findUnique({
-          where: {
-            supervisorId_courseId: {
-              supervisorId: userId,
-              courseId,
-            },
-          },
+      if (!supervisorCourse && req.user!.role !== "ADMIN") {
+        return res.status(403).json({
+          message: "Not authorized to delete assignments in this course",
         });
-
-        if (!supervisorCourse) {
-          return res.status(403).json({
-            message: "Not authorized to delete assignments for this course",
-          });
-        }
       }
 
-      // Verify assignment belongs to the course
+      // Get the assignment to verify it exists and belongs to this course
       const assignment = await prisma.assignment.findFirst({
         where: {
           id: assignmentId,
-          courseId,
+          courseId: courseId,
         },
       });
 
       if (!assignment) {
-        return res.status(404).json({
-          message: "Assignment not found or does not belong to this course",
-        });
+        return res.status(404).json({ message: "Assignment not found" });
       }
 
-      // Delete the assignment and all related submissions
+      // Delete the assignment (this will cascade delete submissions)
       await prisma.assignment.delete({
-        where: {
-          id: assignmentId,
-        },
+        where: { id: assignmentId },
       });
 
       res.json({ message: "Assignment deleted successfully" });

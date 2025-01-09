@@ -390,13 +390,7 @@ router.delete(
       const { assignmentId } = req.params;
       const userId = req.user!.userId;
 
-      console.log("Delete assignment request:", {
-        assignmentId,
-        userId,
-        userRole: req.user?.role,
-      });
-
-      // Get the assignment with course info
+      // Get the assignment to verify it exists and get the courseId
       const assignment = await prisma.assignment.findUnique({
         where: { id: assignmentId },
         include: {
@@ -412,66 +406,29 @@ router.delete(
         },
       });
 
-      console.log("Found assignment:", assignment);
-
       if (!assignment) {
-        console.log("Assignment not found:", assignmentId);
-        return res.status(404).json({
-          message: "Assignment not found",
-        });
+        return res.status(404).json({ message: "Assignment not found" });
       }
 
-      // If user is not admin, verify they are a supervisor for this course
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { role: true },
-      });
-
-      console.log("User role check:", {
-        userId,
-        role: user?.role,
-        isSupervisor: assignment.course.supervisors.length > 0,
-      });
-
+      // Verify user is a supervisor for this course
       if (
-        user?.role !== "ADMIN" &&
+        req.user!.role === "SUPERVISOR" &&
         assignment.course.supervisors.length === 0
       ) {
-        console.log("Authorization failed:", {
-          userId,
-          role: user?.role,
-          supervisorsCount: assignment.course.supervisors.length,
-        });
-        return res.status(403).json({
-          message: "Not authorized to delete this assignment",
-        });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to delete this assignment" });
       }
 
       // Delete the assignment (this will cascade delete submissions)
-      const deletedAssignment = await prisma.assignment.delete({
-        where: {
-          id: assignmentId,
-        },
+      await prisma.assignment.delete({
+        where: { id: assignmentId },
       });
-
-      console.log("Successfully deleted assignment:", deletedAssignment);
 
       res.json({ message: "Assignment deleted successfully" });
     } catch (error) {
-      console.error("Error deleting assignment:", {
-        error,
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
-      if (error instanceof Error) {
-        res.status(500).json({
-          message: "Failed to delete assignment",
-          details: error.message,
-        });
-      } else {
-        res.status(500).json({ message: "Failed to delete assignment" });
-      }
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ message: "Failed to delete assignment" });
     }
   }
 );
