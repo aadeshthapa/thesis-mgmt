@@ -8,6 +8,7 @@ import axios from "axios";
 import { AxiosError } from "axios";
 import AddSupervisorModal from "../../components/AddSupervisorModal";
 import AddAssignmentModal from "../../components/AddAssignmentModal";
+import AdminLayout from "../../components/layout/AdminLayout";
 
 interface AddCourseModalProps {
   isOpen: boolean;
@@ -320,7 +321,7 @@ const CoursesList: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div>
@@ -351,12 +352,6 @@ const CoursesList: React.FC = () => {
               </svg>
               Add Course
             </button>
-            <Link
-              to="/admin/dashboard"
-              className="text-blue-600 hover:text-blue-800 flex items-center"
-            >
-              Back to Dashboard
-            </Link>
           </div>
         </div>
 
@@ -532,7 +527,7 @@ const CoursesList: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

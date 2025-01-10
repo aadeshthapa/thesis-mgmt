@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link } from "react-router-dom";
 import { courseService } from "../../services/courseService";
 import { toast } from "react-toastify";
+import AdminLayout from "../../components/layout/AdminLayout";
 
 interface Student {
   id: string;
@@ -128,7 +129,7 @@ const CourseStudents: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div>
@@ -277,7 +278,7 @@ const CourseStudents: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
