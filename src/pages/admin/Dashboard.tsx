@@ -1,11 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import LogoutButton from "../../components/features/auth/Logout";
 import { useAuth } from "../../contexts/AuthContext";
 import { courseService } from "../../services/courseService";
 import { adminService } from "../../services/adminService";
 import AddUserModal from "./AddUserModal";
 import { toast } from "react-toastify";
+import AdminLayout from "../../components/layout/AdminLayout";
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -60,19 +60,11 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Admin Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Welcome back, {user?.firstName}
-            </p>
-          </div>
-          <LogoutButton />
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          Admin Dashboard
+        </h1>
 
         <div className="mt-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -188,42 +180,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6">
-              <h2 className="text-lg font-medium text-gray-900">
-                Recent Activities
-              </h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-indigo-600">
-                      New Thesis Submission
-                    </p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      John Doe submitted a new thesis
-                    </p>
-                  </div>
-                  <div className="text-sm text-gray-500">2 hours ago</div>
-                </div>
-              </div>
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-indigo-600">
-                      New Supervisor Added
-                    </p>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Dr. Smith joined as supervisor
-                    </p>
-                  </div>
-                  <div className="text-sm text-gray-500">1 day ago</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div className="mt-8">
             <div className="flex flex-col sm:flex-row gap-4">
               <button
@@ -245,22 +201,6 @@ const AdminDashboard: React.FC = () => {
                 </svg>
                 Add New User
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                <svg
-                  className="mr-2 h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Generate Reports
-              </button>
             </div>
           </div>
         </div>
@@ -271,7 +211,7 @@ const AdminDashboard: React.FC = () => {
         onClose={() => setIsAddUserModalOpen(false)}
         onSuccess={handleAddUserSuccess}
       />
-    </div>
+    </AdminLayout>
   );
 };
 
