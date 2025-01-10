@@ -79,7 +79,16 @@ const SupervisorSidebar: React.FC = () => {
   return (
     <div className="h-screen w-64 bg-white border-r border-gray-200 fixed left-0 top-0">
       <div className="flex flex-col h-full">
-        {/* Logo and User Info */}
+        {/* Logo */}
+        <div className="p-4 border-b border-gray-200">
+          <img
+            src="/images/koi.jpg"
+            alt="KOI Logo"
+            className="h-12 w-auto mx-auto"
+          />
+        </div>
+
+        {/* User Info */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-4">
             <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
