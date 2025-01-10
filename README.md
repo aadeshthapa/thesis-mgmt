@@ -1,50 +1,108 @@
-# React + TypeScript + Vite
+# Thesis Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive web application for managing academic courses, assignments, and thesis supervision in an educational setting. Built with React, TypeScript, and modern web technologies.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **User Role Management**
 
-## Expanding the ESLint configuration
+  - Admin dashboard for user and course management
+  - Supervisor interface for course and assignment oversight
+  - Student portal for assignment submission and course interaction
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- **Course Management**
 
-- Configure the top-level `parserOptions` property like this:
+  - Create and manage academic courses
+  - Assign supervisors and students
+  - Track course progress and submissions
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- **Assignment Handling**
+  - Create and distribute assignments
+  - Submit and review assignments
+  - Grade management system
+
+## Tech Stack
+
+- **Frontend**
+
+  - React with TypeScript
+  - Vite for build tooling
+  - Tailwind CSS for styling
+  - React Router for navigation
+
+- **Backend**
+  - Node.js with Express
+  - Prisma ORM
+  - PostgreSQL database
+  - JWT authentication
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- PostgreSQL
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+
+```bash
+git clone [repository-url]
+cd thesis-mgmt
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+2. Install dependencies
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+npm install
+# or
+yarn install
 ```
+
+3. Set up environment variables
+
+```bash
+cp .env.example .env
+# Update the .env file with your configuration
+```
+
+4. Run database migrations
+
+```bash
+npx prisma migrate dev
+```
+
+5. Start the development server
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+The application will be available at `http://localhost:5173`
+
+## Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+├── pages/         # Page components for different roles
+├── services/      # API and business logic services
+├── utils/         # Utility functions and helpers
+└── App.tsx        # Main application component
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
